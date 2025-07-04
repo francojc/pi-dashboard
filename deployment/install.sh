@@ -93,6 +93,39 @@ fi
 # Create necessary directories
 mkdir -p output logs
 
+# Configure X11 for kiosk mode
+echo "Configuring X11 for kiosk mode..."
+cat > /home/$USERNAME/.xinitrc << EOF
+#!/bin/bash
+xset -dpms      # Disable DPMS (Energy Star)
+xset s off      # Disable screen saver
+xset s noblank  # Don't blank the video device
+unclutter -idle 0.5 -root &  # Hide cursor
+chromium-browser --noerrdialogs --disable-infobars --kiosk --incognito file:///home/$USERNAME/pi-dashboard/output/index.html
+EOF
+
+chmod +x /home/$USERNAME/.xinitrc
+
+# Configure auto-start X11 on boot
+echo "Configuring auto-start X11..."
+if ! grep -q "startx" /home/$USERNAME/.bash_profile 2>/dev/null; then
+    cat >> /home/$USERNAME/.bash_profile << EOF
+
+# Auto-start X11 for dashboard
+if [ -z "\$DISPLAY" ] && [ "\$XDG_VTNR" = 1 ]; then
+  startx
+fi
+EOF
+fi
+
+# Configure display rotation for vertical orientation
+echo "Configuring display for vertical orientation..."
+if ! grep -q "display_rotate=1" /boot/firmware/config.txt; then
+    echo "# Display rotation (90° for vertical)" | sudo tee -a /boot/firmware/config.txt
+    echo "display_rotate=1" | sudo tee -a /boot/firmware/config.txt
+    echo "gpu_mem=64" | sudo tee -a /boot/firmware/config.txt
+fi
+
 # Run initial dashboard generation
 echo "Generating initial dashboard..."
 python src/generate_dashboard.py
@@ -127,10 +160,21 @@ echo "Setting up daily reboot..."
 echo
 echo "=== Installation Complete ==="
 echo
+echo "The following configurations have been applied:"
+echo "✓ X11 kiosk mode configured"
+echo "✓ Auto-start X11 on boot configured"
+echo "✓ Display rotation set to vertical (90°)"
+echo "✓ GPU memory split set to 64MB"
+echo "✓ Systemd services installed and enabled"
+echo
 echo "Next steps:"
 echo "1. Edit /home/$USERNAME/pi-dashboard/.env with your API keys"
 echo "2. Edit /home/$USERNAME/pi-dashboard/src/config/config.json for customization"
 echo "3. Reboot the Pi to start the dashboard: sudo reboot"
+echo
+echo "Additional manual configurations (if needed):"
+echo "• Run 'sudo raspi-config' to configure boot options and SSH"
+echo "• Disable unused services (WiFi, Bluetooth) if using Ethernet"
 echo
 echo "To start services manually:"
 echo "  sudo systemctl start dashboard-updater.timer"

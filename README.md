@@ -47,16 +47,16 @@ A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk
 
 ## Quick Start
 
-### Raspberry Pi OS Setup
+### Basic Raspberry Pi Setup
 
-Before installing the dashboard, prepare your Raspberry Pi with the proper OS configuration for kiosk mode:
+The installation script automatically configures most settings for kiosk mode, but you should understand what it does to your system. Only basic OS setup is required first:
 
 #### 1. Install Raspberry Pi OS Lite
 
 1. Download [Raspberry Pi OS Lite](https://www.raspberrypi.org/software/operating-systems/) (32-bit)
 2. Flash to SD card using [Raspberry Pi Imager](https://www.raspberrypi.org/software/)
 3. Enable SSH by creating empty `ssh` file in boot partition
-4. Boot Pi and SSH in: `ssh pi@raspberrypi.local`
+4. Boot Pi and SSH in: `ssh pi@raspberrypi.local` (default user is `pi`)
 
 #### 2. Basic System Configuration
 
@@ -64,95 +64,16 @@ Before installing the dashboard, prepare your Raspberry Pi with the proper OS co
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Configure Pi settings
+# Configure Pi settings (optional - for boot options, SSH, filesystem)
 sudo raspi-config
 ```
 
-In `raspi-config`:
-
+**Optional `raspi-config` settings:**
 - **System Options** → **Boot / Auto Login** → **Console Autologin**
-- **Interface Options** → **SSH** → **Enable**
+- **Interface Options** → **SSH** → **Enable** 
 - **Advanced Options** → **Expand Filesystem**
-- **Advanced Options** → **Memory Split** → Set to **64** (minimum for GPU)
 
-#### 3. Configure Display for Vertical Orientation
-
-Edit boot config for vertical display:
-
-```bash
-sudo nano /boot/firmware/config.txt
-```
-
-Add these lines for vertical (portrait) display:
-
-```ini
-# Display rotation (90° for vertical)
-display_rotate=1
-
-# Force HDMI mode (if needed)
-hdmi_force_hotplug=1
-hdmi_group=2
-hdmi_mode=82  # 1920x1080 60Hz
-
-# GPU memory split
-gpu_mem=64
-```
-
-#### 4. Configure X11 for Kiosk Mode
-
-Create X11 startup script:
-
-```bash
-sudo nano /home/pi/.xinitrc
-```
-
-Add content:
-
-```bash
-#!/bin/bash
-xset -dpms      # Disable DPMS (Energy Star)
-xset s off      # Disable screen saver
-xset s noblank  # Don't blank the video device
-unclutter -idle 0.5 -root &  # Hide cursor
-chromium-browser --noerrdialogs --disable-infobars --kiosk --incognito file:///home/pi/pi-dashboard/output/index.html
-```
-
-Make executable:
-
-```bash
-chmod +x /home/pi/.xinitrc
-```
-
-#### 5. Auto-start X11 on Boot
-
-Edit bash profile:
-
-```bash
-nano /home/pi/.bash_profile
-```
-
-Add:
-
-```bash
-if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
-  startx
-fi
-```
-
-#### 6. Disable Unnecessary Services (Optional)
-
-Save resources by disabling unused services:
-
-```bash
-# Disable Bluetooth and WiFi if using Ethernet
-sudo systemctl disable bluetooth hciuart
-echo 'dtoverlay=disable-wifi' | sudo tee -a /boot/firmware/config.txt
-echo 'dtoverlay=disable-bt' | sudo tee -a /boot/firmware/config.txt
-
-# Disable other services
-sudo systemctl disable triggerhappy
-sudo systemctl disable dphys-swapfile  # If you have enough RAM
-```
+> **Note:** The installation script will automatically configure X11 kiosk mode, display rotation, GPU memory, and auto-start settings.
 
 ### Development (macOS/Linux)
 
@@ -190,7 +111,7 @@ python -m http.server 8000 --directory output
 
 ### Deployment (Raspberry Pi)
 
-**Prerequisites:** Complete the [Raspberry Pi OS Setup](#raspberry-pi-os-setup) section above first.
+**Prerequisites:** Complete the [Basic Raspberry Pi Setup](#basic-raspberry-pi-setup) section above first.
 
 1. SSH into your Raspberry Pi
 2. Download and run the installation script:
@@ -216,16 +137,104 @@ chmod +x install.sh
 - `-g github_user` - GitHub repository username (default: YOUR_USERNAME)  
 - `-h` - Show help
 
-3. Configure your API keys:
+**What the installation script configures automatically:**
+
+- ✅ **X11 kiosk mode**: Creates `/home/USERNAME/.xinitrc` with Chromium fullscreen settings
+- ✅ **Auto-start X11**: Adds startup commands to `/home/USERNAME/.bash_profile`
+- ✅ **Display rotation**: Adds `display_rotate=1` and `gpu_mem=64` to `/boot/firmware/config.txt`
+- ✅ **Dashboard services**: Installs systemd services for automatic updates
+- ✅ **Daily reboot**: Adds cron job for 4 AM daily restart
+
+**Files modified by the installer:**
+```
+/home/USERNAME/.xinitrc          # X11 startup script (created)
+/home/USERNAME/.bash_profile     # Auto-start X11 (appended)
+/boot/firmware/config.txt        # Display settings (appended)
+/etc/systemd/system/             # Dashboard services (copied)
+/var/spool/cron/crontabs/        # Daily reboot cron (added)
+```
+
+3. Configure your API keys (replace `pi` with your username if different):
 
 ```bash
-nano /home/USERNAME/pi-dashboard/.env
+nano /home/pi/pi-dashboard/.env
 ```
 
 4. Reboot to start dashboard:
 
 ```bash
 sudo reboot
+```
+
+#### Manual Configuration Details
+
+If you prefer to configure manually or want to understand what the installer does, here are the equivalent manual steps:
+
+<details>
+<summary>🔧 Click to see manual configuration steps</summary>
+
+**1. Create X11 startup script:**
+```bash
+nano /home/pi/.xinitrc
+```
+Add:
+```bash
+#!/bin/bash
+xset -dpms
+xset s off
+xset s noblank
+unclutter -idle 0.5 -root &
+chromium-browser --noerrdialogs --disable-infobars --kiosk --incognito file:///home/pi/pi-dashboard/output/index.html
+```
+```bash
+chmod +x /home/pi/.xinitrc
+```
+
+**2. Configure auto-start X11:**
+```bash
+nano /home/pi/.bash_profile
+```
+Add:
+```bash
+if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
+  startx
+fi
+```
+
+**3. Configure display rotation:**
+```bash
+sudo nano /boot/firmware/config.txt
+```
+Add:
+```ini
+display_rotate=1
+gpu_mem=64
+```
+
+**4. Set up daily reboot:**
+```bash
+crontab -e
+```
+Add:
+```
+0 4 * * * /sbin/reboot
+```
+
+</details>
+
+#### Optional System Optimizations
+
+Additional optimizations you can apply manually:
+
+```bash
+# Disable Bluetooth and WiFi if using Ethernet only
+sudo systemctl disable bluetooth hciuart
+echo 'dtoverlay=disable-wifi' | sudo tee -a /boot/firmware/config.txt
+echo 'dtoverlay=disable-bt' | sudo tee -a /boot/firmware/config.txt
+
+# Disable other services to save resources
+sudo systemctl disable triggerhappy
+sudo systemctl disable dphys-swapfile  # If you have enough RAM
 ```
 
 ## Configuration
@@ -345,7 +354,7 @@ sudo systemctl status dashboard-updater.timer
 # View logs
 journalctl -u dashboard-updater.service -f
 
-# Run manually
+# Run manually (replace pi with your username if different)
 cd /home/pi/pi-dashboard
 ./venv/bin/python src/generate_dashboard.py
 ```
