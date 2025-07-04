@@ -9,178 +9,246 @@
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Time Display - Top Left -->
+        <!-- Header Section -->
         <header class="dashboard-header">
             <div class="current-time">{{ current_time | default('12:05') }}</div>
-        </header>
-
-        <!-- Date Display - Top Right -->
-        <div class="current-date">
-            <div class="day-name">{{ day_name | default('Friday') }}</div>
-            <div class="date-info">{{ date_info | default('July 4') }}</div>
-        </div>
-
-        <!-- Alert banner (conditional) -->
-        {% if alert %}
-        <div class="alert-banner">
-            <span class="alert-icon">{{ alert.icon | default('⚠️') }}</span>
-            <span>{{ alert.text }}</span>
-            <span>{{ alert.time | default('') }}</span>
-        </div>
-        {% endif %}
-
-        <!-- Weather section with forecast -->
-        <section class="weather-main">
-            <!-- Current weather -->
-            {% if weather %}
-            <div class="weather-current">
-                <div class="weather-main-info">
-                    <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png" 
-                         alt="{{ weather.description }}" class="weather-icon">
-                    <div class="weather-temp-main">{{ weather.temp }}°</div>
-                </div>
-                <div class="weather-details">
-                    <div class="weather-detail">
-                        <span class="weather-detail-icon">○</span>
-                        <span>{{ weather.wind_speed }} {{ weather.wind_dir | default('wnw') }}</span>
-                    </div>
-                    <div class="weather-detail">
-                        <span class="weather-detail-icon">☉</span>
-                        <span>{{ weather.sunrise | default('8:05') }}</span>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="weather-current">
-                <div class="weather-main-info">
-                    <div class="weather-icon">☀</div>
-                    <div class="weather-temp-main">95°</div>
-                </div>
-                <div class="weather-details">
-                    <div class="weather-detail">
-                        <span class="weather-detail-icon">○</span>
-                        <span>7 wnw</span>
-                    </div>
-                    <div class="weather-detail">
-                        <span class="weather-detail-icon">☉</span>
-                        <span>8:05</span>
-                    </div>
-                </div>
+            
+            <!-- Alert banner (conditional) -->
+            {% if alert %}
+            <div class="alert-banner">
+                <span class="alert-icon">{{ alert.icon | default('⚠️') }}</span>
+                <span>{{ alert.text }}</span>
+                <span>{{ alert.time | default('') }}</span>
             </div>
             {% endif %}
             
-            <!-- Weather forecast -->
-            <div class="weather-forecast">
-                    {% if forecast %}
-                    {% for day in forecast %}
-                    <div class="forecast-day">
-                        <div class="forecast-day-name">{{ day.day }}</div>
-                        <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" 
-                             alt="{{ day.description }}" class="forecast-icon">
-                        <div class="forecast-temps">
-                            <span class="forecast-high">{{ day.high }}°</span>
-                            <span class="forecast-low">{{ day.low }}°</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="forecast-day">
-                        <div class="forecast-day-name">TODAY</div>
-                        <div class="forecast-icon">☀</div>
-                        <div class="forecast-temps">
-                            <span class="forecast-high">95°</span>
-                            <span class="forecast-low">64°</span>
-                        </div>
-                    </div>
-                    <div class="forecast-day">
-                        <div class="forecast-day-name">SAT</div>
-                        <div class="forecast-icon">☀</div>
-                        <div class="forecast-temps">
-                            <span class="forecast-high">104°</span>
-                            <span class="forecast-low">64°</span>
-                        </div>
-                    </div>
-                    <div class="forecast-day">
-                        <div class="forecast-day-name">SUN</div>
-                        <div class="forecast-icon">☀</div>
-                        <div class="forecast-temps">
-                            <span class="forecast-high">107°</span>
-                            <span class="forecast-low">64°</span>
-                        </div>
-                    </div>
-                    <div class="forecast-day">
-                        <div class="forecast-day-name">MON</div>
-                        <div class="forecast-icon">☁</div>
-                        <div class="forecast-temps">
-                            <span class="forecast-high">88°</span>
-                            <span class="forecast-low">62°</span>
-                        </div>
-                    </div>
-                    <div class="forecast-day">
-                        <div class="forecast-day-name">TUE</div>
-                        <div class="forecast-icon">☀</div>
-                        <div class="forecast-temps">
-                            <span class="forecast-high">91°</span>
-                            <span class="forecast-low">66°</span>
-                        </div>
-                    </div>
-                    {% endif %}
+            <div class="current-date">
+                <div class="day-name">{{ day_name | default('Friday') }}</div>
+                <div class="date-info">{{ date_info | default('July 4') }}</div>
             </div>
-        </section>
+        </header>
 
-        <!-- Calendar/Events section -->
+
+        <!-- Calendar Week View -->
         <section class="calendar-widget">
-                    {% if events %}
-                    {% for event in events %}
-                    <div class="event-item">
-                        <div class="event-time">
-                            {% if event.start == 'All Day' %}
-                            <span class="event-all-day">All Day</span>
-                            {% else %}
-                            {{ event.start }}{% if event.end %} - {{ event.end }}{% endif %}
-                            {% endif %}
-                        </div>
+            <div class="calendar-header">
+                <h2>{{ current_month }} {{ current_year }}</h2>
+                <div class="week-range">Week of {{ week_start_date }}</div>
+            </div>
+            
+            <div class="calendar-grid">
+                {% if week_events and week_events|length > 0 %}
+                {% for date_key in week_events.keys() | sort %}
+                {% set day_data = week_events[date_key] %}
+                <div class="day-column{% if day_data.is_today %} today{% endif %}" data-date="{{ date_key }}">
+                    <div class="day-header">
+                        <div class="day-name">{{ day_data.day_name }}</div>
+                        <div class="day-number">{{ day_data.day_number }}</div>
+                    </div>
+                    
+                    <!-- All-day events at top -->
+                    {% for event in day_data.all_day %}
+                    <div class="event-block all-day">
                         <div class="event-title">{{ event.summary }}</div>
                         {% if event.location %}
                         <div class="event-location">📍 {{ event.location }}</div>
                         {% endif %}
                     </div>
                     {% endfor %}
-                    {% else %}
-                    <div class="event-item">
-                        <div class="event-time">09:00 - 09:30</div>
-                        <div class="event-title">Team Standup</div>
-                    </div>
-                    <div class="event-item">
-                        <div class="event-time">14:00 - 15:00</div>
-                        <div class="event-title">Project Review</div>
-                    </div>
-                    <div class="event-item">
-                        <div class="event-time">16:00 - 17:00</div>
-                        <div class="event-title">Client Call</div>
-                    </div>
-                    {% endif %}
-        </section>
-
-        <!-- News section -->
-        <section class="news-widget">
-                    {% if articles %}
-                    {% for article in articles[:3] %}
-                    <div class="news-item">
-                        <div class="news-source">{{ article.source }}</div>
-                        <div class="news-title">{{ article.title }}</div>
-                        {% if article.summary %}
-                        <div class="news-summary">{{ article.summary[:120] }}...</div>
+                    
+                    <!-- Timed events -->
+                    {% for event in day_data.timed %}
+                    <div class="event-block timed">
+                        <div class="event-time">{{ event.start }}-{{ event.end }}</div>
+                        <div class="event-title">{{ event.summary }}</div>
+                        {% if event.location %}
+                        <div class="event-location">📍 {{ event.location }}</div>
                         {% endif %}
                     </div>
                     {% endfor %}
-                    {% else %}
-                    <div class="news-item">
-                        <div class="news-source">Financial News</div>
-                        <div class="news-title">Other grocery stocks plummet as Amazon buys W...</div>
-                        <div class="news-summary">Amazon scared investors away from competing grocery stores today when it acq...</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <!-- Fallback mock calendar -->
+                <div class="day-column">
+                    <div class="day-header">
+                        <div class="day-name">Mon</div>
+                        <div class="day-number">1</div>
                     </div>
-                    {% endif %}
+                </div>
+                <div class="day-column today">
+                    <div class="day-header">
+                        <div class="day-name">Tue</div>
+                        <div class="day-number">2</div>
+                    </div>
+                    <div class="event-block timed">
+                        <div class="event-time">09:00-09:30</div>
+                        <div class="event-title">Team Standup</div>
+                    </div>
+                    <div class="event-block all-day">
+                        <div class="event-title">Holiday</div>
+                    </div>
+                </div>
+                <div class="day-column">
+                    <div class="day-header">
+                        <div class="day-name">Wed</div>
+                        <div class="day-number">3</div>
+                    </div>
+                    <div class="event-block timed">
+                        <div class="event-time">14:00-15:00</div>
+                        <div class="event-title">Project Review</div>
+                    </div>
+                </div>
+                <div class="day-column">
+                    <div class="day-header">
+                        <div class="day-name">Thu</div>
+                        <div class="day-number">4</div>
+                    </div>
+                </div>
+                <div class="day-column">
+                    <div class="day-header">
+                        <div class="day-name">Fri</div>
+                        <div class="day-number">5</div>
+                    </div>
+                    <div class="event-block timed">
+                        <div class="event-time">16:00-17:00</div>
+                        <div class="event-title">Client Call</div>
+                    </div>
+                </div>
+                <div class="day-column">
+                    <div class="day-header">
+                        <div class="day-name">Sat</div>
+                        <div class="day-number">6</div>
+                    </div>
+                </div>
+                <div class="day-column">
+                    <div class="day-header">
+                        <div class="day-name">Sun</div>
+                        <div class="day-number">7</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Weather section with forecast -->
+            <section class="weather-main">
+                <!-- Current weather -->
+                {% if weather %}
+                <div class="weather-current">
+                    <div class="weather-main-info">
+                        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png" 
+                             alt="{{ weather.description }}" class="weather-icon">
+                        <div class="weather-temp-main">{{ weather.temp }}°</div>
+                    </div>
+                    <div class="weather-details">
+                        <div class="weather-detail">
+                            <span class="weather-detail-icon">○</span>
+                            <span>{{ weather.wind_speed }} {{ weather.wind_dir | default('wnw') }}</span>
+                        </div>
+                        <div class="weather-detail">
+                            <span class="weather-detail-icon">☉</span>
+                            <span>{{ weather.sunrise | default('8:05') }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="weather-current">
+                    <div class="weather-main-info">
+                        <div class="weather-icon">☀</div>
+                        <div class="weather-temp-main">95°</div>
+                    </div>
+                    <div class="weather-details">
+                        <div class="weather-detail">
+                            <span class="weather-detail-icon">○</span>
+                            <span>7 wnw</span>
+                        </div>
+                        <div class="weather-detail">
+                            <span class="weather-detail-icon">☉</span>
+                            <span>8:05</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Weather forecast -->
+                <div class="weather-forecast">
+                        {% if forecast %}
+                        {% for day in forecast %}
+                        <div class="forecast-day">
+                            <div class="forecast-day-name">{{ day.day }}</div>
+                            <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" 
+                                 alt="{{ day.description }}" class="forecast-icon">
+                            <div class="forecast-temps">
+                                <span class="forecast-high">{{ day.high }}°</span>
+                                <span class="forecast-low">{{ day.low }}°</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="forecast-day">
+                            <div class="forecast-day-name">TODAY</div>
+                            <div class="forecast-icon">☀</div>
+                            <div class="forecast-temps">
+                                <span class="forecast-high">95°</span>
+                                <span class="forecast-low">64°</span>
+                            </div>
+                        </div>
+                        <div class="forecast-day">
+                            <div class="forecast-day-name">SAT</div>
+                            <div class="forecast-icon">☀</div>
+                            <div class="forecast-temps">
+                                <span class="forecast-high">104°</span>
+                                <span class="forecast-low">64°</span>
+                            </div>
+                        </div>
+                        <div class="forecast-day">
+                            <div class="forecast-day-name">SUN</div>
+                            <div class="forecast-icon">☀</div>
+                            <div class="forecast-temps">
+                                <span class="forecast-high">107°</span>
+                                <span class="forecast-low">64°</span>
+                            </div>
+                        </div>
+                        <div class="forecast-day">
+                            <div class="forecast-day-name">MON</div>
+                            <div class="forecast-icon">☁</div>
+                            <div class="forecast-temps">
+                                <span class="forecast-high">88°</span>
+                                <span class="forecast-low">62°</span>
+                            </div>
+                        </div>
+                        <div class="forecast-day">
+                            <div class="forecast-day-name">TUE</div>
+                            <div class="forecast-icon">☀</div>
+                            <div class="forecast-temps">
+                                <span class="forecast-high">91°</span>
+                                <span class="forecast-low">66°</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                </div>
+            </section>
+
+        <!-- News section -->
+        <section class="news-widget">
+                        {% if articles %}
+                        {% for article in articles[:3] %}
+                        <div class="news-item">
+                            <div class="news-source">{{ article.source }}</div>
+                            <div class="news-title">{{ article.title }}</div>
+                            {% if article.summary %}
+                            <div class="news-summary">{{ article.summary[:120] }}...</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="news-item">
+                            <div class="news-source">Financial News</div>
+                            <div class="news-title">Other grocery stocks plummet as Amazon buys W...</div>
+                            <div class="news-summary">Amazon scared investors away from competing grocery stores today when it acq...</div>
+                        </div>
+                        {% endif %}
         </section>
 
         <!-- Footer -->

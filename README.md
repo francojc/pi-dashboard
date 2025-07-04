@@ -148,6 +148,7 @@ chmod +x install.sh
 - ✅ **Daily reboot**: Adds cron job for 4 AM daily restart
 
 **Files modified by the installer:**
+
 ```
 /home/USERNAME/.xinitrc          # X11 startup script (created)
 /home/USERNAME/.bash_profile     # Auto-start X11 (appended)
@@ -176,10 +177,13 @@ If you prefer to configure manually or want to understand what the installer doe
 <summary>🔧 Click to see manual configuration steps</summary>
 
 **1. Create X11 startup script:**
+
 ```bash
 nano /home/pi/.xinitrc
 ```
+
 Add:
+
 ```bash
 #!/bin/bash
 xset -dpms
@@ -193,6 +197,7 @@ chmod +x /home/pi/.xinitrc
 ```
 
 **2. Configure auto-start X11:**
+
 ```bash
 nano /home/pi/.bash_profile
 ```
@@ -204,6 +209,7 @@ fi
 ```
 
 **3. Configure display rotation:**
+
 ```bash
 sudo nano /boot/firmware/config.txt
 ```

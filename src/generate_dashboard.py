@@ -8,7 +8,7 @@ import os
 import sys
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -164,6 +164,93 @@ class GoogleCalendarService:
         except Exception as e:
             logger.error(f"Failed to fetch calendar events: {e}")
             return []
+
+    def get_week_events(self, calendar_id='primary') -> Dict[str, Dict]:
+        """Fetch events for current week (Monday-Sunday)"""
+        if not self.service:
+            logger.error("Calendar service not authenticated")
+            return {}
+
+        try:
+            # Calculate Monday of current week
+            now = datetime.now()
+            monday = now - timedelta(days=now.weekday())
+            monday = monday.replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            # Calculate Sunday (end of week)
+            sunday = monday + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+            # Convert to UTC for API call
+            monday_utc = monday.replace(tzinfo=timezone.utc)
+            sunday_utc = sunday.replace(tzinfo=timezone.utc)
+
+            events_result = self.service.events().list(
+                calendarId=calendar_id,
+                timeMin=monday_utc.isoformat(),
+                timeMax=sunday_utc.isoformat(),
+                maxResults=50,
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()
+
+            events = events_result.get('items', [])
+            week_events = {}
+
+            # Initialize week structure
+            for i in range(7):
+                day = monday + timedelta(days=i)
+                date_key = day.strftime('%Y-%m-%d')
+                week_events[date_key] = {
+                    'date': day,
+                    'day_name': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+                    'day_number': day.day,
+                    'is_today': day.date() == now.date(),
+                    'all_day': [],
+                    'timed': []
+                }
+
+            # Process events
+            for event in events:
+                start = event['start'].get('dateTime', event['start'].get('date'))
+                end = event['end'].get('dateTime', event['end'].get('date'))
+                
+                # Determine event date
+                if 'T' in start:
+                    # Timed event
+                    start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
+                    end_dt = datetime.fromisoformat(end.replace('Z', '+00:00'))
+                    event_date = start_dt.date()
+                    
+                    event_data = {
+                        'summary': event.get('summary', 'Untitled Event'),
+                        'start': start_dt.strftime('%H:%M'),
+                        'end': end_dt.strftime('%H:%M'),
+                        'location': event.get('location', ''),
+                        'type': 'timed'
+                    }
+                    
+                    date_key = event_date.strftime('%Y-%m-%d')
+                    if date_key in week_events:
+                        week_events[date_key]['timed'].append(event_data)
+                else:
+                    # All-day event
+                    event_date = datetime.fromisoformat(start).date()
+                    
+                    event_data = {
+                        'summary': event.get('summary', 'Untitled Event'),
+                        'location': event.get('location', ''),
+                        'type': 'all_day'
+                    }
+                    
+                    date_key = event_date.strftime('%Y-%m-%d')
+                    if date_key in week_events:
+                        week_events[date_key]['all_day'].append(event_data)
+
+            return week_events
+
+        except Exception as e:
+            logger.error(f"Failed to fetch week calendar events: {e}")
+            return {}
 
 
 class DashboardGenerator:
@@ -356,6 +443,60 @@ class DashboardGenerator:
             {'summary': 'Client Call', 'start': '16:00', 'end': '17:00'}
         ]
 
+    def fetch_week_calendar_events(self) -> Dict[str, Dict]:
+        """Fetch week calendar events from Google Calendar or return mock data"""
+        calendar_config = self.config.get('calendar', {})
+
+        # Use real Google Calendar if configured
+        if not calendar_config.get('use_mock_data', True) and self.calendar_service:
+            try:
+                calendar_id = calendar_config.get('calendar_id', 'primary')
+                week_events = self.calendar_service.get_week_events(calendar_id)
+                logger.info(f"Fetched week events from Google Calendar")
+                return week_events
+            except Exception as e:
+                logger.error(f"Failed to fetch Google Calendar week events: {e}")
+                # Fall back to mock data on error
+
+        # Return mock data as fallback for current week
+        logger.info("Using mock week calendar data")
+        now = datetime.now()
+        monday = now - timedelta(days=now.weekday())
+        
+        mock_week_events = {}
+        for i in range(7):
+            day = monday + timedelta(days=i)
+            date_key = day.strftime('%Y-%m-%d')
+            mock_week_events[date_key] = {
+                'date': day,
+                'day_name': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+                'day_number': day.day,
+                'is_today': day.date() == now.date(),
+                'all_day': [],
+                'timed': []
+            }
+
+        # Add some mock events
+        today_key = now.strftime('%Y-%m-%d')
+        tomorrow = now + timedelta(days=1)
+        tomorrow_key = tomorrow.strftime('%Y-%m-%d')
+        
+        if today_key in mock_week_events:
+            mock_week_events[today_key]['timed'].extend([
+                {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30', 'type': 'timed'},
+                {'summary': 'Project Review', 'start': '14:00', 'end': '15:00', 'type': 'timed'}
+            ])
+            mock_week_events[today_key]['all_day'].append(
+                {'summary': 'Holiday', 'type': 'all_day'}
+            )
+        
+        if tomorrow_key in mock_week_events:
+            mock_week_events[tomorrow_key]['timed'].append(
+                {'summary': 'Client Call', 'start': '16:00', 'end': '17:00', 'type': 'timed'}
+            )
+
+        return mock_week_events
+
     def generate_dashboard(self):
         """Generate the dashboard HTML"""
         try:
@@ -365,6 +506,7 @@ class DashboardGenerator:
             forecast = self.fetch_forecast()
             articles = self.fetch_rss_feeds()
             events = self.fetch_calendar_events()
+            week_events = self.fetch_week_calendar_events()
 
             # Get current date/time info
             now = datetime.now()
@@ -372,15 +514,25 @@ class DashboardGenerator:
             month_names = ['January', 'February', 'March', 'April', 'May', 'June',
                           'July', 'August', 'September', 'October', 'November', 'December']
 
+            # Calculate week info for calendar
+            monday = now - timedelta(days=now.weekday())
+            week_start_date = f"{month_names[monday.month - 1]} {monday.day}"
+            current_month = month_names[now.month - 1]
+            current_year = now.year
+
             # Prepare template data
             template_data = {
                 'weather': weather,
                 'forecast': forecast,
                 'articles': articles,
                 'events': events,
+                'week_events': week_events,
                 'current_time': now.strftime('%H:%M'),
                 'day_name': day_names[now.weekday()],
                 'date_info': f"{month_names[now.month - 1]} {now.day}",
+                'current_month': current_month,
+                'current_year': current_year,
+                'week_start_date': week_start_date,
                 'last_updated': now.strftime('%H:%M:%S'),
                 'config': self.config.get('display', {})
             }
