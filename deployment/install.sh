@@ -3,7 +3,37 @@
 
 set -e
 
+# Default values
+USERNAME="pi"
+REPO_USER="YOUR_USERNAME"
+
+# Parse command line arguments
+while getopts "u:g:h" opt; do
+    case $opt in
+        u)
+            USERNAME="$OPTARG"
+            ;;
+        g)
+            REPO_USER="$OPTARG"
+            ;;
+        h)
+            echo "Usage: $0 [-u username] [-g github_user]"
+            echo "  -u username    System username (default: pi)"
+            echo "  -g github_user GitHub repository username (default: YOUR_USERNAME)"
+            echo "  -h             Show this help"
+            exit 0
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            echo "Use -h for help"
+            exit 1
+            ;;
+    esac
+done
+
 echo "=== Raspberry Pi Dashboard Installer ==="
+echo "Installing for user: $USERNAME"
+echo "GitHub repository: https://github.com/$REPO_USER/pi-dashboard.git"
 echo
 
 # Check if running on Raspberry Pi
@@ -34,7 +64,7 @@ sudo apt-get install -y \
 
 # Create directory and clone repository
 echo "Setting up dashboard directory..."
-cd /home/pi
+cd /home/$USERNAME
 
 if [ -d "pi-dashboard" ]; then
     echo "Dashboard directory already exists. Pulling latest changes..."
@@ -42,7 +72,7 @@ if [ -d "pi-dashboard" ]; then
     git pull
 else
     echo "Cloning dashboard repository..."
-    git clone https://github.com/YOUR_USERNAME/pi-dashboard.git
+    git clone https://github.com/$REPO_USER/pi-dashboard.git
     cd pi-dashboard
 fi
 
@@ -79,14 +109,14 @@ sudo systemctl enable dashboard-kiosk.service
 sudo systemctl enable dashboard-updater.timer
 
 # Configure auto-login (optional)
-read -p "Enable auto-login for pi user? (y/n) " -n 1 -r
+read -p "Enable auto-login for $USERNAME user? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     sudo mkdir -p /etc/systemd/system/getty@tty1.service.d/
     sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf > /dev/null <<EOF
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty --autologin pi --noclear %I \$TERM
+ExecStart=-/sbin/agetty --autologin $USERNAME --noclear %I \$TERM
 EOF
 fi
 
@@ -98,8 +128,8 @@ echo
 echo "=== Installation Complete ==="
 echo
 echo "Next steps:"
-echo "1. Edit /home/pi/pi-dashboard/.env with your API keys"
-echo "2. Edit /home/pi/pi-dashboard/src/config/config.json for customization"
+echo "1. Edit /home/$USERNAME/pi-dashboard/.env with your API keys"
+echo "2. Edit /home/$USERNAME/pi-dashboard/src/config/config.json for customization"
 echo "3. Reboot the Pi to start the dashboard: sudo reboot"
 echo
 echo "To start services manually:"

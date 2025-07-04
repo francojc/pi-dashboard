@@ -7,7 +7,7 @@
   "rss_feeds": {
     "BBC News": "http://feeds.bbci.co.uk/news/rss.xml",
     "Hacker News": "https://news.ycombinator.com/rss",
-    "Reuters": "https://www.reutersagency.com/feed/?best-topics=tech&post_type=best"
+    "r/ClaudeAI": "https://www.reddit.com/r/ClaudeAI/hot/.rss"
   },
   "rss_settings": {
     "items_per_feed": 3
@@ -22,4 +22,3 @@
     "show_seconds": false
   }
 }
-

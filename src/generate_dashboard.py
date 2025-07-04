@@ -89,10 +89,81 @@ class DashboardGenerator:
                 'icon': data['weather'][0]['icon'],
                 'humidity': data['main']['humidity'],
                 'wind_speed': wind_speed,
-                'wind_unit': wind_unit
+                'wind_unit': wind_unit,
+                'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M'),
+                'sunset': datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M')
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Weather fetch failed: {e}")
+            return None
+
+    def fetch_forecast(self) -> Optional[List[Dict]]:
+        """Fetch 5-day weather forecast from OpenWeatherMap API"""
+        try:
+            config = self.config.get('weather', {})
+            if not config.get('api_key'):
+                logger.warning("No weather API key configured")
+                return None
+
+            url = "https://api.openweathermap.org/data/2.5/forecast"
+            params = {
+                'q': config.get('location', 'Winston-Salem,NC'),
+                'appid': config['api_key'],
+                'units': config.get('units', 'imperial')
+            }
+
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            # Process forecast data - group by day and get daily highs/lows
+            forecast_days = {}
+            day_names = ['TODAY', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+            
+            for item in data['list'][:40]:  # 5 days * 8 (3-hour intervals)
+                dt = datetime.fromtimestamp(item['dt'])
+                day_key = dt.strftime('%Y-%m-%d')
+                
+                if day_key not in forecast_days:
+                    # Determine day name
+                    today = datetime.now().date()
+                    item_date = dt.date()
+                    
+                    if item_date == today:
+                        day_name = 'TODAY'
+                    else:
+                        day_name = day_names[dt.weekday() + 1] if dt.weekday() < 6 else day_names[0]
+                    
+                    forecast_days[day_key] = {
+                        'day': day_name,
+                        'icon': item['weather'][0]['icon'],
+                        'description': item['weather'][0]['description'],
+                        'high': round(item['main']['temp']),
+                        'low': round(item['main']['temp']),
+                        'temps': [round(item['main']['temp'])]
+                    }
+                else:
+                    # Update high/low and collect temps
+                    temp = round(item['main']['temp'])
+                    forecast_days[day_key]['temps'].append(temp)
+                    forecast_days[day_key]['high'] = max(forecast_days[day_key]['high'], temp)
+                    forecast_days[day_key]['low'] = min(forecast_days[day_key]['low'], temp)
+
+            # Convert to list and return first 5 days
+            forecast_list = []
+            for day_data in list(forecast_days.values())[:5]:
+                forecast_list.append({
+                    'day': day_data['day'],
+                    'icon': day_data['icon'],
+                    'description': day_data['description'],
+                    'high': day_data['high'],
+                    'low': day_data['low']
+                })
+
+            return forecast_list
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Forecast fetch failed: {e}")
             return None
 
     def fetch_rss_feeds(self) -> List[Dict]:
@@ -139,6 +210,7 @@ class DashboardGenerator:
             # Fetch all data
             logger.info("Fetching dashboard data...")
             weather = self.fetch_weather()
+            forecast = self.fetch_forecast()
             articles = self.fetch_rss_feeds()
             events = self.fetch_calendar_events()
 
@@ -151,6 +223,7 @@ class DashboardGenerator:
             # Prepare template data
             template_data = {
                 'weather': weather,
+                'forecast': forecast,
                 'articles': articles,
                 'events': events,
                 'current_time': now.strftime('%H:%M'),
