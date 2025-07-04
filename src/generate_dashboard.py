@@ -8,7 +8,7 @@ import os
 import sys
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -41,22 +41,22 @@ logger = logging.getLogger(__name__)
 
 class GoogleCalendarService:
     """Service for Google Calendar API interactions"""
-    
+
     SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-    
+
     def __init__(self):
         self.credentials = None
         self.service = None
         self._authenticate()
-    
+
     def _authenticate(self):
         """Authenticate with Google Calendar API"""
         creds_file = 'token.json'
-        
+
         # Load existing credentials
         if os.path.exists(creds_file):
             self.credentials = Credentials.from_authorized_user_file(creds_file, self.SCOPES)
-        
+
         # If credentials are invalid or don't exist, get new ones
         if not self.credentials or not self.credentials.valid:
             if self.credentials and self.credentials.expired and self.credentials.refresh_token:
@@ -65,17 +65,17 @@ class GoogleCalendarService:
                 except Exception as e:
                     logger.warning(f"Failed to refresh credentials: {e}")
                     self.credentials = None
-            
+
             if not self.credentials:
                 # Check for required environment variables
                 client_id = os.getenv('GOOGLE_CALENDAR_CLIENT_ID')
                 client_secret = os.getenv('GOOGLE_CALENDAR_CLIENT_SECRET')
-                
+
                 if not client_id or not client_secret:
                     logger.error("GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET must be set in environment variables")
                     logger.error(f"Current values - CLIENT_ID: {'<set>' if client_id else '<missing>'}, CLIENT_SECRET: {'<set>' if client_secret else '<missing>'}")
                     raise ValueError("Required Google Calendar credentials not found in environment variables")
-                
+
                 # Create proper client configuration for installed app
                 client_config = {
                     "installed": {
@@ -84,27 +84,27 @@ class GoogleCalendarService:
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
                         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                        "redirect_uris": ["http://localhost:8080"]
+                        "redirect_uris": ["http://localhost:8081"],
                     }
                 }
-                
+
                 try:
                     flow = InstalledAppFlow.from_client_config(client_config, self.SCOPES)
                     # Use fixed port 8080 to match redirect URI
                     logger.info("Starting OAuth flow - please complete authorization in your browser")
-                    self.credentials = flow.run_local_server(port=8080, open_browser=True)
+                    self.credentials = flow.run_local_server(port=8081, open_browser=True)
                     logger.info("OAuth flow completed successfully")
-                    
+
                     # Save credentials for next run
                     with open(creds_file, 'w') as token:
                         token.write(self.credentials.to_json())
-                        
+
                 except Exception as e:
                     logger.error(f"OAuth flow failed: {e}")
-                    logger.error("Make sure http://localhost:8080 is registered as a redirect URI in Google Cloud Console")
+                    logger.error("Make sure http://localhost:8081 is registered as a redirect URI in Google Cloud Console")
                     logger.error(f"OAuth client config: client_id ends with ...{client_id[-10:] if client_id and len(client_id) > 10 else 'N/A'}")
                     raise
-        
+
         if self.credentials:
             try:
                 self.service = build('calendar', 'v3', credentials=self.credentials)
@@ -112,18 +112,18 @@ class GoogleCalendarService:
             except Exception as e:
                 logger.error(f"Failed to build calendar service: {e}")
                 self.service = None
-    
+
     def get_events(self, calendar_id='primary', max_results=10) -> List[Dict]:
         """Fetch upcoming events from Google Calendar"""
         if not self.service:
             logger.error("Calendar service not authenticated")
             return []
-        
+
         try:
             # Get events from now to end of day
             now = datetime.utcnow()
             end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-            
+
             events_result = self.service.events().list(
                 calendarId=calendar_id,
                 timeMin=now.isoformat() + 'Z',
@@ -132,14 +132,14 @@ class GoogleCalendarService:
                 singleEvents=True,
                 orderBy='startTime'
             ).execute()
-            
+
             events = events_result.get('items', [])
             formatted_events = []
-            
+
             for event in events:
                 start = event['start'].get('dateTime', event['start'].get('date'))
                 end = event['end'].get('dateTime', event['end'].get('date'))
-                
+
                 # Parse datetime
                 if 'T' in start:
                     start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
@@ -150,7 +150,7 @@ class GoogleCalendarService:
                     # All-day event
                     start_time = 'All Day'
                     end_time = ''
-                
+
                 formatted_events.append({
                     'summary': event.get('summary', 'Untitled Event'),
                     'start': start_time,
@@ -158,9 +158,9 @@ class GoogleCalendarService:
                     'location': event.get('location', ''),
                     'description': event.get('description', '')
                 })
-            
+
             return formatted_events
-            
+
         except Exception as e:
             logger.error(f"Failed to fetch calendar events: {e}")
             return []
@@ -259,21 +259,21 @@ class DashboardGenerator:
             # Process forecast data - group by day and get daily highs/lows
             forecast_days = {}
             day_names = ['TODAY', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
-            
+
             for item in data['list'][:40]:  # 5 days * 8 (3-hour intervals)
                 dt = datetime.fromtimestamp(item['dt'])
                 day_key = dt.strftime('%Y-%m-%d')
-                
+
                 if day_key not in forecast_days:
                     # Determine day name
                     today = datetime.now().date()
                     item_date = dt.date()
-                    
+
                     if item_date == today:
                         day_name = 'TODAY'
                     else:
                         day_name = day_names[dt.weekday() + 1] if dt.weekday() < 6 else day_names[0]
-                    
+
                     forecast_days[day_key] = {
                         'day': day_name,
                         'icon': item['weather'][0]['icon'],
@@ -335,7 +335,7 @@ class DashboardGenerator:
     def fetch_calendar_events(self) -> List[Dict]:
         """Fetch calendar events from Google Calendar or return mock data"""
         calendar_config = self.config.get('calendar', {})
-        
+
         # Use real Google Calendar if configured
         if not calendar_config.get('use_mock_data', True) and self.calendar_service:
             try:
@@ -347,7 +347,7 @@ class DashboardGenerator:
             except Exception as e:
                 logger.error(f"Failed to fetch Google Calendar events: {e}")
                 # Fall back to mock data on error
-        
+
         # Return mock data as fallback
         logger.info("Using mock calendar data")
         return [

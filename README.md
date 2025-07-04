@@ -79,6 +79,8 @@ sudo raspi-config
 
 1. Clone the repository:
 
+*Note: you will need Git installed. If you don't have it, install it with `sudo apt install git -y` on your Raspberry Pi.*
+
 ```bash
 git clone https://github.com/francojc/pi-dashboard.git
 cd pi-dashboard
