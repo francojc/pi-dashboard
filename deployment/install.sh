@@ -90,8 +90,8 @@ if [ ! -f .env ]; then
     echo "Please edit .env file with your API keys"
 fi
 
-# Create output directory
-mkdir -p output
+# Create necessary directories
+mkdir -p output logs
 
 # Run initial dashboard generation
 echo "Generating initial dashboard..."
