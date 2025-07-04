@@ -8,6 +8,8 @@ A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk
 - **Server-Side Rendering**: Static HTML generation reduces browser load
 - **Dark Theme**: Perfect for 24/7 display
 - **Auto-Updates**: Refreshes data every 15 minutes
+- **Real Weather Data**: Current conditions and 5-day forecast from OpenWeatherMap
+- **RSS Feed Support**: Including Reddit RSS feeds
 - **Responsive**: Optimized for vertical/portrait displays
 - **Reliable**: Systemd service with automatic restarts
 
@@ -82,14 +84,31 @@ python -m http.server 8000 --directory output
 ### Deployment (Raspberry Pi)
 
 1. SSH into your Raspberry Pi
-2. Run the installation script:
+2. Download and run the installation script:
+
 ```bash
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/pi-dashboard/main/deployment/install.sh | bash
+# Download the script
+wget https://raw.githubusercontent.com/YOUR_USERNAME/pi-dashboard/main/deployment/install.sh
+chmod +x install.sh
+
+# Run with default settings (pi user, YOUR_USERNAME repo)
+./install.sh
+
+# Or specify custom user and GitHub username
+./install.sh -u myuser -g francojc
+
+# See all options
+./install.sh -h
 ```
+
+**Installation Script Options:**
+- `-u username` - System username (default: pi)
+- `-g github_user` - GitHub repository username (default: YOUR_USERNAME)  
+- `-h` - Show help
 
 3. Configure your API keys:
 ```bash
-nano /home/pi/pi-dashboard/.env
+nano /home/USERNAME/pi-dashboard/.env
 ```
 
 4. Reboot to start dashboard:
@@ -116,15 +135,24 @@ Edit `src/config/config.json`:
 Get your free API key from [OpenWeatherMap](https://openweathermap.org/api).
 
 ### RSS Feeds
+
 Add or modify feeds in `src/config/config.json`:
+
 ```json
 {
   "rss_feeds": {
     "Feed Name": "https://example.com/rss",
-    "Another Feed": "https://another.com/feed.xml"
+    "Another Feed": "https://another.com/feed.xml",
+    "Reddit ClaudeAI": "https://www.reddit.com/r/ClaudeAI/.rss"
   }
 }
 ```
+
+**Reddit RSS Format:**
+- Basic: `https://www.reddit.com/r/SUBREDDIT/.rss`
+- Hot posts: `https://www.reddit.com/r/SUBREDDIT/hot/.rss`
+- New posts: `https://www.reddit.com/r/SUBREDDIT/new/.rss`
+- Top posts: `https://www.reddit.com/r/SUBREDDIT/top/.rss`
 
 ### Display Settings
 ```json
@@ -139,6 +167,7 @@ Add or modify feeds in `src/config/config.json`:
 ## Development
 
 ### Project Structure
+
 ```
 pi-dashboard/
 ├── src/
@@ -161,11 +190,13 @@ pi-dashboard/
 ### Testing Locally
 
 1. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 2. Run tests:
+
 ```bash
 pytest tests/
 ```
