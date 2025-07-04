@@ -34,14 +34,14 @@ logger = logging.getLogger(__name__)
 
 class DashboardGenerator:
     """Main dashboard generator class"""
-    
+
     def __init__(self, config_path: str = "src/config/config.json"):
         """Initialize the dashboard generator with configuration"""
         self.config = self._load_config(config_path)
         self.template_dir = Path("src/templates")
         self.output_dir = Path("output")
         self.output_dir.mkdir(exist_ok=True)
-        
+
     def _load_config(self, config_path: str) -> dict:
         """Load configuration from JSON file"""
         try:
@@ -54,7 +54,7 @@ class DashboardGenerator:
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
             return {}
-    
+
     def fetch_weather(self) -> Optional[Dict]:
         """Fetch weather data from OpenWeatherMap API"""
         try:
@@ -62,43 +62,52 @@ class DashboardGenerator:
             if not config.get('api_key'):
                 logger.warning("No weather API key configured")
                 return None
-                
+
             url = "https://api.openweathermap.org/data/2.5/weather"
             params = {
-                'q': config.get('location', 'London,UK'),
+                'q': config.get('location', 'Winston-Salem,NC'),
                 'appid': config['api_key'],
-                'units': config.get('units', 'metric')
+                'units': config.get('units', 'imperial')
             }
-            
+
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
+
+            # Convert wind speed based on units
+            if config.get('units') == 'imperial':
+                wind_speed = round(data['wind']['speed'], 1)  # mph
+                wind_unit = 'mph'
+            else:
+                wind_speed = round(data['wind']['speed'] * 3.6, 1)  # Convert m/s to km/h
+                wind_unit = 'km/h'
+
             return {
                 'temp': round(data['main']['temp']),
                 'feels_like': round(data['main']['feels_like']),
                 'description': data['weather'][0]['description'].title(),
                 'icon': data['weather'][0]['icon'],
                 'humidity': data['main']['humidity'],
-                'wind_speed': round(data['wind']['speed'] * 3.6, 1)  # Convert m/s to km/h
+                'wind_speed': wind_speed,
+                'wind_unit': wind_unit
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Weather fetch failed: {e}")
             return None
-    
+
     def fetch_rss_feeds(self) -> List[Dict]:
         """Fetch RSS feed entries"""
         all_articles = []
         feeds = self.config.get('rss_feeds', {})
-        
+
         for name, url in feeds.items():
             try:
                 logger.info(f"Fetching RSS feed: {name}")
                 feed = feedparser.parse(url)
-                
+
                 # Get configured number of articles per feed
                 max_items = self.config.get('rss_settings', {}).get('items_per_feed', 3)
-                
+
                 for entry in feed.entries[:max_items]:
                     all_articles.append({
                         'source': name,
@@ -109,9 +118,9 @@ class DashboardGenerator:
                     })
             except Exception as e:
                 logger.error(f"Failed to fetch RSS feed {name}: {e}")
-                
+
         return all_articles
-    
+
     def fetch_calendar_events(self) -> List[Dict]:
         """Fetch calendar events - placeholder for now"""
         # This would integrate with Google Calendar API
@@ -123,7 +132,7 @@ class DashboardGenerator:
                 {'summary': 'Client Call', 'start': '16:00', 'end': '17:00'}
             ]
         return []
-    
+
     def generate_dashboard(self):
         """Generate the dashboard HTML"""
         try:
@@ -132,30 +141,39 @@ class DashboardGenerator:
             weather = self.fetch_weather()
             articles = self.fetch_rss_feeds()
             events = self.fetch_calendar_events()
-            
+
+            # Get current date/time info
+            now = datetime.now()
+            day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            month_names = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December']
+
             # Prepare template data
             template_data = {
                 'weather': weather,
                 'articles': articles,
                 'events': events,
-                'last_updated': datetime.now().strftime('%H:%M:%S'),
+                'current_time': now.strftime('%H:%M'),
+                'day_name': day_names[now.weekday()],
+                'date_info': f"{month_names[now.month - 1]} {now.day}",
+                'last_updated': now.strftime('%H:%M:%S'),
                 'config': self.config.get('display', {})
             }
-            
+
             # Render template
             logger.info("Rendering dashboard template...")
             env = Environment(loader=FileSystemLoader(self.template_dir))
             template = env.get_template('dashboard.html')
             html_content = template.render(template_data)
-            
+
             # Write output
             output_path = self.output_dir / 'index.html'
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
-                
+
             logger.info(f"Dashboard generated successfully: {output_path}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Dashboard generation failed: {e}")
             return False

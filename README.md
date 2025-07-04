@@ -31,12 +31,14 @@ A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk
 ## Requirements
 
 ### Hardware
+
 - Raspberry Pi B+ (or newer)
 - 512MB+ RAM
 - 8GB+ SD Card
 - Display (optimized for vertical orientation)
 
 ### Software
+
 - Raspberry Pi OS Lite (32-bit)
 - Python 3.7+
 - Chromium Browser
@@ -46,12 +48,14 @@ A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk
 ### Development (macOS/Linux)
 
 1. Clone the repository:
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/pi-dashboard.git
+git clone https://github.com/francojc/pi-dashboard.git
 cd pi-dashboard
 ```
 
 2. Set up Python environment:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -96,7 +100,9 @@ sudo reboot
 ## Configuration
 
 ### Weather
+
 Edit `src/config/config.json`:
+
 ```json
 {
   "weather": {

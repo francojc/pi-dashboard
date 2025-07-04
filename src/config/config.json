@@ -1,8 +1,8 @@
 {
   "weather": {
-    "api_key": "YOUR_OPENWEATHER_API_KEY",
-    "location": "London,UK",
-    "units": "metric"
+    "location": "Winston-Salem,NC,US",
+    "units": "imperial",
+    "timezone": "America/New_York"
   },
   "rss_feeds": {
     "BBC News": "http://feeds.bbci.co.uk/news/rss.xml",
@@ -22,3 +22,4 @@
     "show_seconds": false
   }
 }
+
