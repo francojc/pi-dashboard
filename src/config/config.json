@@ -13,8 +13,10 @@
     "items_per_feed": 1
   },
   "calendar": {
-    "use_mock_data": true,
-    "calendar_id": "primary"
+    "use_mock_data": false,
+    "calendar_id": "primary",
+    "max_events": 5,
+    "timezone": "America/New_York"
   },
   "display": {
     "refresh_interval": 900,

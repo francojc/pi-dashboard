@@ -128,31 +128,36 @@
             </div>
         </section>
 
-        <!-- Calendar/Tasks section -->
+        <!-- Calendar/Events section -->
         <section class="calendar-widget">
                     {% if events %}
                     {% for event in events %}
-                    <div class="task-item">
-                        <div class="task-checkbox{% if event.completed %} checked{% endif %}"></div>
-                        <div class="task-text">{{ event.summary }}</div>
-                        {% if event.date %}
-                        <div class="task-date">{{ event.date }}</div>
+                    <div class="event-item">
+                        <div class="event-time">
+                            {% if event.start == 'All Day' %}
+                            <span class="event-all-day">All Day</span>
+                            {% else %}
+                            {{ event.start }}{% if event.end %} - {{ event.end }}{% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="event-title">{{ event.summary }}</div>
+                        {% if event.location %}
+                        <div class="event-location">📍 {{ event.location }}</div>
                         {% endif %}
                     </div>
                     {% endfor %}
                     {% else %}
-                    <div class="task-item">
-                        <div class="task-checkbox"></div>
-                        <div class="task-text">Pickup dry cleaning</div>
+                    <div class="event-item">
+                        <div class="event-time">09:00 - 09:30</div>
+                        <div class="event-title">Team Standup</div>
                     </div>
-                    <div class="task-item">
-                        <div class="task-checkbox"></div>
-                        <div class="task-text">Take out Recycling</div>
-                        <div class="task-date">Jul 22</div>
+                    <div class="event-item">
+                        <div class="event-time">14:00 - 15:00</div>
+                        <div class="event-title">Project Review</div>
                     </div>
-                    <div class="task-item">
-                        <div class="task-checkbox checked"></div>
-                        <div class="task-text">Walk the dog</div>
+                    <div class="event-item">
+                        <div class="event-time">16:00 - 17:00</div>
+                        <div class="event-title">Client Call</div>
                     </div>
                     {% endif %}
         </section>
