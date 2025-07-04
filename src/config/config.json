@@ -10,7 +10,7 @@
     "r/ClaudeAI": "https://www.reddit.com/r/ClaudeAI/hot/.rss"
   },
   "rss_settings": {
-    "items_per_feed": 1
+    "items_per_feed": 3
   },
   "calendar": {
     "use_mock_data": false,

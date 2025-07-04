@@ -230,25 +230,34 @@
                 </div>
             </section>
 
-        <!-- News section -->
-        <section class="news-widget">
-                        {% if articles %}
-                        {% for article in articles[:3] %}
-                        <div class="news-item">
-                            <div class="news-source">{{ article.source }}</div>
-                            <div class="news-title">{{ article.title }}</div>
-                            {% if article.summary %}
-                            <div class="news-summary">{{ article.summary[:120] }}...</div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        <div class="news-item">
-                            <div class="news-source">Financial News</div>
-                            <div class="news-title">Other grocery stocks plummet as Amazon buys W...</div>
-                            <div class="news-summary">Amazon scared investors away from competing grocery stores today when it acq...</div>
-                        </div>
-                        {% endif %}
+        <!-- News ticker section -->
+        <section class="news-ticker-container">
+            <div class="news-ticker-wrapper">
+                <div class="news-ticker-content" id="newsTicker">
+                    {% if articles %}
+                    {% for article in articles %}
+                    <span class="news-ticker-item">
+                        <span class="ticker-source">[{{ article.source }}]</span>
+                        <span class="ticker-title">{{ article.title }}</span>
+                    </span>
+                    {% if not loop.last %}<span class="ticker-separator">•</span>{% endif %}
+                    {% endfor %}
+                    {% else %}
+                    <span class="news-ticker-item">
+                        <span class="ticker-source">[Financial News]</span>
+                        <span class="ticker-title">Markets respond to latest economic indicators</span>
+                    </span>
+                    <span class="ticker-separator">•</span>
+                    <span class="news-ticker-item">
+                        <span class="ticker-source">[Tech News]</span>
+                        <span class="ticker-title">Innovation drives technology sector growth</span>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="ticker-controls">
+                <button class="ticker-control-btn" id="tickerPlayPause" aria-label="Play/Pause ticker">⏸️</button>
+            </div>
         </section>
 
         <!-- Footer -->
@@ -291,5 +300,8 @@
         updateTime();
         setInterval(updateTime, 1000);
     </script>
+    
+    <!-- News Ticker JavaScript -->
+    <script src="static/ticker.js"></script>
 </body>
 </html>
