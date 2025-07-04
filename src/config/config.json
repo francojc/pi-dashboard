@@ -1,0 +1,24 @@
+{
+  "weather": {
+    "api_key": "YOUR_OPENWEATHER_API_KEY",
+    "location": "London,UK",
+    "units": "metric"
+  },
+  "rss_feeds": {
+    "BBC News": "http://feeds.bbci.co.uk/news/rss.xml",
+    "Hacker News": "https://news.ycombinator.com/rss",
+    "Reuters": "https://www.reutersagency.com/feed/?best-topics=tech&post_type=best"
+  },
+  "rss_settings": {
+    "items_per_feed": 3
+  },
+  "calendar": {
+    "use_mock_data": true,
+    "calendar_id": "primary"
+  },
+  "display": {
+    "refresh_interval": 900,
+    "theme": "dark",
+    "show_seconds": false
+  }
+}
