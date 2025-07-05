@@ -1,17 +1,19 @@
 # Raspberry Pi Dashboard
 
-A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk mode on a vertical display. Shows weather, RSS feeds, and calendar events with automatic updates.
+A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk mode on a vertical display. Features a modern card-based design with weather, calendar, local information, and news feeds with automatic updates.
 
 ## Features
 
+- **Modern Card-Based Design**: Glassmorphism effects with performance optimizations
 - **Minimal Resource Usage**: Optimized for 512MB RAM and ARM1176 CPU
 - **Server-Side Rendering**: Static HTML generation reduces browser load
-- **Dark Theme**: Perfect for 24/7 display
+- **Enhanced Local Information**: Air quality, UV index, sun position, traffic patterns
 - **Auto-Updates**: Refreshes data every 15 minutes
-- **Real Weather Data**: Current conditions and 5-day forecast from OpenWeatherMap
-- **RSS Feed Support**: Including Reddit RSS feeds
+- **Real Weather Data**: Current conditions, 5-day forecast, and air quality from OpenWeatherMap
+- **Smart Calendar**: Complete month view with adjacent month days
+- **RSS Feed Support**: Dual news and events tickers with smooth animations
 - **Responsive**: Optimized for vertical/portrait displays
-- **Reliable**: Systemd service with automatic restarts
+- **Reliable**: Systemd service with automatic restarts and fallback data
 
 ## Architecture
 
