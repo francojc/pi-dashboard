@@ -70,7 +70,7 @@ body {
 .hero-section {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 10px;
   flex-shrink: 0;
 }
@@ -612,7 +612,7 @@ body {
         <section class="hero-section">
             <div class="time-display">
                 <div class="current-time">{{ current_time | default('14:32') }}</div>
-                <div class="current-date">{{ day_name | default('Friday') }}, {{ date_info | default('July 4') }}</div>
+                <div class="current-date">{{ day_name | default('Friday') }}, {{ date_info | default('July 4th, 2025') }}</div>
             </div>
             <div class="weather-hero">
                 <div class="weather-main">
