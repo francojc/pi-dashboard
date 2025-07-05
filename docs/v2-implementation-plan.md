@@ -1,37 +1,45 @@
 # Dashboard v2 Card-Based Implementation Plan
 
 ## Project Context
+
 This is a hobbyist dashboard for Raspberry Pi B+ (512MB RAM) running in kiosk mode on a vertical display. The focus is on lightweight, static HTML generation with minimal resource usage and no JavaScript dependencies.
 
 ## Current State
+
 - Static HTML generation via Python script
 - Runs every 15 minutes via systemd timer
 - Vertical layout with weather, calendar, and RSS feeds
 - Optimized for 512MB RAM and ARM1176 CPU
 
 ## Goal
+
 Transform to card-based layout matching the v2 mockup while maintaining the same lightweight approach and hardware constraints.
 
 ## Simple 3-Stage Plan
 
 ### Stage 1: CSS Refresh (1-2 days)
+
 **Goal**: Update visual design to match v2 mockup
 
 **Tasks:**
+
 1. Create `styles-v2.css` with card-based design
 2. Update color scheme to match mockup (#64ffda primary, dark theme)
 3. Implement glassmorphism effects (but test performance on Pi)
 4. Add CSS animations for tickers (with fallback for reduced motion)
 
 **Key considerations:**
+
 - Keep CSS lightweight - no heavy animations that tax the Pi
 - Use CSS custom properties for easy theming
 - Maintain accessibility (high contrast, readable fonts)
 
 ### Stage 2: Template Update (1-2 days)
+
 **Goal**: Restructure HTML to card-based layout
 
 **Tasks:**
+
 1. Update `dashboard.html` to use card grid layout
 2. Reorganize sections to match mockup:
    - Hero section (time + weather summary)
@@ -42,11 +50,13 @@ Transform to card-based layout matching the v2 mockup while maintaining the same
 4. Test on Pi for performance
 
 **Key considerations:**
+
 - Reuse existing data structure
 - No new API calls in this stage
 - Ensure layout works on vertical displays
 
 ### Stage 3: Enhanced Data ✅ COMPLETED
+
 **Goal**: Add minimal new data features
 
 **Tasks:**
