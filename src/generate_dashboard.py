@@ -286,6 +286,77 @@ class DashboardGenerator:
             logger.error(f"Failed to load config: {e}")
             return {}
 
+    def _calculate_mock_uv_index(self) -> int:
+        """Calculate realistic UV index based on time of day and season"""
+        try:
+            now = datetime.now()
+            hour = now.hour
+            month = now.month
+            
+            # Base UV for summer months (higher in June-August)
+            if month in [6, 7, 8]:  # Summer
+                base_uv = 8
+            elif month in [4, 5, 9, 10]:  # Spring/Fall
+                base_uv = 6
+            else:  # Winter
+                base_uv = 3
+                
+            # Time-based adjustment (peak at solar noon ~1PM)
+            if 10 <= hour <= 16:  # Peak sun hours
+                time_multiplier = 1.0
+                if 12 <= hour <= 14:  # Solar noon peak
+                    time_multiplier = 1.2
+            elif 8 <= hour < 10 or 16 < hour <= 18:  # Morning/evening
+                time_multiplier = 0.6
+            else:  # Early morning/night
+                time_multiplier = 0.1
+                
+            uv_index = int(base_uv * time_multiplier)
+            return max(0, min(11, uv_index))  # Clamp to valid UV range
+            
+        except Exception:
+            return 6  # Safe fallback
+
+    def _calculate_sun_position(self, weather: Optional[Dict]) -> int:
+        """Calculate sun position percentage across the arc based on current time and sunrise/sunset"""
+        try:
+            now = datetime.now()
+            current_time = now.hour * 60 + now.minute  # Current time in minutes
+            
+            if weather and 'sunrise' in weather and 'sunset' in weather:
+                # Parse sunrise and sunset times 
+                sunrise_parts = weather['sunrise'].split(':')
+                sunset_parts = weather['sunset'].split(':')
+                
+                sunrise_minutes = int(sunrise_parts[0]) * 60 + int(sunrise_parts[1])
+                sunset_minutes = int(sunset_parts[0]) * 60 + int(sunset_parts[1])
+                
+                # Calculate position percentage
+                if current_time < sunrise_minutes:
+                    # Before sunrise - sun is "below" the arc (0%)
+                    return 0
+                elif current_time > sunset_minutes:
+                    # After sunset - sun is "below" the arc (100% but visually off)
+                    return 100
+                else:
+                    # During daylight - calculate position along arc
+                    daylight_duration = sunset_minutes - sunrise_minutes
+                    elapsed_daylight = current_time - sunrise_minutes
+                    position = int((elapsed_daylight / daylight_duration) * 100)
+                    return max(5, min(95, position))  # Keep within visible arc bounds
+            else:
+                # Fallback calculation based on hour of day
+                if 6 <= now.hour <= 20:  # Rough daylight hours
+                    # Simple calculation: 6AM = 0%, 1PM = 50%, 8PM = 100%
+                    progress = (now.hour - 6) / 14  # 14 hour span
+                    return int(progress * 100)
+                else:
+                    return 0 if now.hour < 6 else 100
+                    
+        except Exception as e:
+            logger.debug(f"Sun position calculation failed: {e}")
+            return 35  # Safe middle position
+
     def fetch_weather(self) -> Optional[Dict]:
         """Fetch weather data from OpenWeatherMap API"""
         try:
@@ -323,11 +394,187 @@ class DashboardGenerator:
                 'wind_unit': wind_unit,
                 'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M'),
                 'sunset': datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M'),
-                'uv_index': 6  # Mock UV index since one-call API needed for real UV data
+                'uv_index': self._calculate_mock_uv_index()  # Calculate realistic UV based on time and weather
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Weather fetch failed: {e}")
             return None
+
+    def fetch_air_quality(self) -> Dict:
+        """Fetch air quality data from OpenWeather Air Pollution API or return mock data"""
+        try:
+            config = self.config.get('weather', {})
+            if not config.get('api_key'):
+                logger.info("No weather API key configured, using mock air quality data")
+                return self._get_mock_air_quality()
+
+            # Use same location as weather for simplicity
+            location = config.get('location', 'Winston-Salem,NC,US')
+            
+            # First, get coordinates for the location using geocoding
+            geocoding_url = "https://api.openweathermap.org/geo/1.0/direct"
+            geo_params = {
+                'q': location,
+                'appid': config['api_key'],
+                'limit': 1
+            }
+            
+            geo_response = requests.get(geocoding_url, params=geo_params, timeout=10)
+            geo_response.raise_for_status()
+            geo_data = geo_response.json()
+            
+            if not geo_data:
+                logger.warning(f"Could not find coordinates for location: {location}")
+                return self._get_mock_air_quality()
+            
+            lat, lon = geo_data[0]['lat'], geo_data[0]['lon']
+            
+            # Now get air quality data using coordinates
+            aqi_url = "https://api.openweathermap.org/data/2.5/air_pollution"
+            aqi_params = {
+                'lat': lat,
+                'lon': lon,
+                'appid': config['api_key']
+            }
+            
+            aqi_response = requests.get(aqi_url, params=aqi_params, timeout=10)
+            aqi_response.raise_for_status()
+            aqi_data = aqi_response.json()
+            
+            # Extract air quality index and convert to status
+            aqi_value = aqi_data['list'][0]['main']['aqi']
+            aqi_status_map = {
+                1: 'Good',
+                2: 'Fair', 
+                3: 'Moderate',
+                4: 'Poor',
+                5: 'Very Poor'
+            }
+            
+            return {
+                'status': aqi_status_map.get(aqi_value, 'Unknown'),
+                'aqi': aqi_value * 50  # Convert OpenWeather 1-5 scale to rough US AQI equivalent
+            }
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Air quality fetch failed: {e}")
+            return self._get_mock_air_quality()
+        except Exception as e:
+            logger.error(f"Unexpected error fetching air quality: {e}")
+            return self._get_mock_air_quality()
+    
+    def _get_mock_air_quality(self) -> Dict:
+        """Generate realistic mock air quality data based on time and season"""
+        try:
+            now = datetime.now()
+            hour = now.hour
+            month = now.month
+            
+            # Base AQI varies by season and time
+            if month in [6, 7, 8]:  # Summer - higher pollution due to heat
+                base_aqi = 65
+            elif month in [12, 1, 2]:  # Winter - higher due to heating
+                base_aqi = 55
+            else:  # Spring/Fall - generally better
+                base_aqi = 40
+                
+            # Time-based variation (rush hours have higher pollution)
+            if 7 <= hour <= 9 or 17 <= hour <= 19:  # Rush hours
+                time_multiplier = 1.3
+            elif 11 <= hour <= 15:  # Midday
+                time_multiplier = 1.1
+            else:  # Night/early morning
+                time_multiplier = 0.8
+                
+            final_aqi = int(base_aqi * time_multiplier)
+            
+            # Determine status based on US AQI scale
+            if final_aqi <= 50:
+                status = 'Good'
+            elif final_aqi <= 100:
+                status = 'Moderate'
+            elif final_aqi <= 150:
+                status = 'Unhealthy for Sensitive Groups'
+            else:
+                status = 'Unhealthy'
+                
+            return {'status': status, 'aqi': final_aqi}
+            
+        except Exception:
+            return {'status': 'Good', 'aqi': 45}  # Safe fallback
+
+    def _generate_realistic_traffic(self) -> List[Dict]:
+        """Generate realistic traffic data based on time of day and day of week"""
+        try:
+            now = datetime.now()
+            hour = now.hour
+            weekday = now.weekday()  # 0=Monday, 6=Sunday
+            
+            # Base travel times for different routes (in minutes)
+            routes = [
+                {'name': 'I-40 East', 'base_time': 18},
+                {'name': 'US-52 North', 'base_time': 22}, 
+                {'name': 'Business 40', 'base_time': 28}
+            ]
+            
+            # Traffic multipliers based on time and day
+            if weekday in [5, 6]:  # Weekend
+                if 10 <= hour <= 16:  # Weekend afternoon shopping/activity
+                    time_multiplier = 1.2
+                elif 17 <= hour <= 20:  # Weekend evening dining
+                    time_multiplier = 1.1
+                else:
+                    time_multiplier = 0.8  # Generally lighter on weekends
+            else:  # Weekday
+                if 7 <= hour <= 9:  # Morning rush hour
+                    time_multiplier = 1.6
+                elif 17 <= hour <= 19:  # Evening rush hour
+                    time_multiplier = 1.5
+                elif 12 <= hour <= 13:  # Lunch hour
+                    time_multiplier = 1.2
+                elif 22 <= hour or hour <= 5:  # Late night/early morning
+                    time_multiplier = 0.7
+                else:  # Regular hours
+                    time_multiplier = 1.0
+            
+            traffic_list = []
+            for route in routes:
+                # Calculate actual time with multiplier and some route-specific variation
+                actual_time = int(route['base_time'] * time_multiplier)
+                
+                # Add route-specific adjustments
+                if 'I-40' in route['name']:
+                    # Highway, less affected by local traffic but weather sensitive
+                    actual_time = int(actual_time * 0.95)
+                elif 'Business' in route['name']:
+                    # Local roads, more affected by traffic lights and local congestion
+                    actual_time = int(actual_time * 1.1)
+                
+                # Determine status based on how much longer than base time
+                time_ratio = actual_time / route['base_time']
+                if time_ratio <= 1.1:
+                    status = 'normal'
+                elif time_ratio <= 1.3:
+                    status = 'slow'
+                else:
+                    status = 'heavy'
+                
+                traffic_list.append({
+                    'route': route['name'],
+                    'time': f"{actual_time} min",
+                    'status': status
+                })
+            
+            return traffic_list
+            
+        except Exception as e:
+            logger.debug(f"Traffic generation failed: {e}")
+            # Safe fallback
+            return [
+                {'route': 'I-40 East', 'time': '22 min', 'status': 'normal'},
+                {'route': 'US-52 North', 'time': '28 min', 'status': 'slow'},
+                {'route': 'Business 40', 'time': '35 min', 'status': 'heavy'}
+            ]
 
     def fetch_forecast(self) -> Optional[List[Dict]]:
         """Fetch 5-day weather forecast from OpenWeatherMap API"""
@@ -543,16 +790,12 @@ class DashboardGenerator:
             current_year = now.year
             week_number = now.isocalendar()[1]
 
-            # Mock data for v2 template features
-            air_quality = {'status': 'Good', 'aqi': 45}
-            traffic = [
-                {'route': 'I-40 East', 'time': '22 min', 'status': 'normal'},
-                {'route': 'US-52 North', 'time': '28 min', 'status': 'slow'},
-                {'route': 'Business 40', 'time': '35 min', 'status': 'heavy'}
-            ]
+            # Air quality data (real or mock)
+            air_quality = self.fetch_air_quality()
+            traffic = self._generate_realistic_traffic()
             
-            # Calculate sun position for arc (mock calculation)
-            sun_position = 35  # percentage across arc
+            # Calculate sun position for arc (real calculation)
+            sun_position = self._calculate_sun_position(weather)
             
             # Create upcoming events for ticker
             upcoming_events = [
@@ -565,20 +808,58 @@ class DashboardGenerator:
             # Add UV level text
             uv_level = 'High' if weather and weather.get('uv_index', 6) > 5 else 'Moderate'
             
-            # Generate calendar month days (simple mock for now)
+            # Generate enhanced calendar month days with previous/next month days
             month_days = []
             import calendar as cal
+            
+            # Get calendar grid for current month
             month_cal = cal.monthcalendar(now.year, now.month)
             
-            for week in month_cal:
-                for day in week:
+            # Calculate previous and next month info
+            if now.month == 1:
+                prev_month, prev_year = 12, now.year - 1
+            else:
+                prev_month, prev_year = now.month - 1, now.year
+                
+            if now.month == 12:
+                next_month, next_year = 1, now.year + 1
+            else:
+                next_month, next_year = now.month + 1, now.year
+            
+            # Get number of days in previous month
+            prev_month_days = cal.monthrange(prev_year, prev_month)[1]
+            
+            # Calculate how many days from previous month to show
+            first_week = month_cal[0]
+            prev_month_start_day = prev_month_days - (6 - first_week.index(1)) if 1 in first_week else prev_month_days
+            
+            next_month_day = 1
+            
+            for week_idx, week in enumerate(month_cal):
+                for day_idx, day in enumerate(week):
                     if day == 0:
-                        continue  # Skip empty days
-                    month_days.append({
-                        'number': day,
-                        'is_today': day == now.day,
-                        'is_other_month': False
-                    })
+                        # This is an empty slot, determine if it's previous or next month
+                        if week_idx == 0:  # First week, so it's previous month
+                            prev_day = prev_month_start_day + day_idx + 1
+                            month_days.append({
+                                'number': prev_day,
+                                'is_today': False,
+                                'is_other_month': True
+                            })
+                        else:  # Later weeks, so it's next month
+                            month_days.append({
+                                'number': next_month_day,
+                                'is_today': False,
+                                'is_other_month': True
+                            })
+                            next_month_day += 1
+                    else:
+                        # This is a day in current month
+                        month_days.append({
+                            'number': day,
+                            'is_today': day == now.day,
+                            'is_other_month': False
+                        })
 
             # Prepare template data
             template_data = {

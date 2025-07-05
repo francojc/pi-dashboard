@@ -153,7 +153,7 @@ chmod +x install.sh
 ```
 /home/USERNAME/.xinitrc          # X11 startup script (created)
 /home/USERNAME/.bash_profile     # Auto-start X11 (appended)
-/boot/firmware/config.txt        # Display settings (appended)
+/boot/config.txt        # Display settings (appended)
 /etc/systemd/system/             # Dashboard services (copied)
 /var/spool/cron/crontabs/        # Daily reboot cron (added)
 ```
