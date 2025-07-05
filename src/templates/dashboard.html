@@ -150,7 +150,7 @@ body {
 }
 
 .current-time {
-  font-size: 5.5rem;
+  font-size: 7rem;
   font-weight: 200;
   line-height: 0.8;
   margin-bottom: 8px;
@@ -161,7 +161,7 @@ body {
 }
 
 .current-date {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   color: var(--text-secondary);
   font-weight: 300;
 }
@@ -178,7 +178,7 @@ body {
 }
 
 .main-temp {
-  font-size: 4.5rem;
+  font-size: 5.5rem;
   font-weight: 200;
   line-height: 1;
   margin-bottom: 5px;
@@ -196,7 +196,7 @@ body {
 }
 
 .weather-icon-large {
-  font-size: 5rem;
+  font-size: 6rem;
   filter: drop-shadow(0 0 20px rgba(100, 255, 218, 0.3));
 }
 
@@ -234,7 +234,7 @@ body {
 }
 
 .card-title {
-  font-size: 1.3rem;
+  font-size: 1.8rem;
   margin-bottom: var(--spacing-md);
   color: var(--text-accent);
   font-weight: 500;
@@ -261,7 +261,7 @@ body {
 }
 
 .forecast-day-name {
-  font-size: 1rem;
+  font-size: 1.4rem;
   font-weight: 500;
 }
 
@@ -271,13 +271,14 @@ body {
 }
 
 .forecast-desc {
-  font-size: 0.95rem;
+  font-size: 1.2rem;
   color: var(--text-secondary);
 }
 
 .forecast-temp-range {
   text-align: right;
-  font-size: 1rem;
+  font-size: 1.3rem;
+  white-space: nowrap;
 }
 
 .forecast-high {
@@ -286,7 +287,7 @@ body {
 
 .forecast-low {
   color: var(--text-secondary);
-  margin-left: 8px;
+  margin-left: 12px;
 }
 
 /* Local Info Card */
@@ -359,7 +360,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
 }
 
@@ -388,12 +389,12 @@ body {
 }
 
 .metric-compact .metric-icon {
-  font-size: 1.2rem;
+  font-size: 1.6rem;
   margin-bottom: 4px;
 }
 
 .metric-compact .metric-label {
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -401,13 +402,13 @@ body {
 }
 
 .metric-compact .metric-value {
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .metric-compact .metric-subtext {
-  font-size: 0.65rem;
+  font-size: 0.85rem;
   color: var(--text-accent);
   margin-top: 1px;
 }
@@ -420,7 +421,7 @@ body {
 }
 
 .commute-label {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
   margin-bottom: 10px;
   text-align: center;
@@ -441,13 +442,13 @@ body {
 }
 
 .route-name {
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   margin-bottom: 4px;
 }
 
 .route-time {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 600;
 }
 
@@ -469,12 +470,12 @@ body {
 }
 
 .month-year {
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   font-weight: 600;
 }
 
 .week-info {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: var(--text-accent);
 }
 
@@ -491,7 +492,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   border-radius: 6px;
   background: rgba(100, 255, 218, 0.05);
 }
@@ -531,13 +532,13 @@ body {
 
 .event-time-col {
   min-width: 70px;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   color: var(--text-accent);
   font-weight: 500;
 }
 
 .event-title {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   line-height: 1.3;
 }
 
@@ -578,7 +579,7 @@ body {
   padding: 4px 12px;
   background: rgba(100, 255, 218, 0.15);
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   color: #64ffda;
   font-weight: 600;
   margin-bottom: 8px;
@@ -599,7 +600,7 @@ body {
 .ticker-scroll {
   white-space: nowrap;
   animation: slide 60s linear infinite;
-  font-size: 1rem;
+  font-size: 1.3rem;
   line-height: 1.4;
 }
 
@@ -630,13 +631,13 @@ body {
   color: var(--text-accent);
   font-weight: 600;
   margin-right: 10px;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
 }
 
 .calendar-event {
   color: #f39c12;
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: 1.05rem;
 }
 
 /* Responsive adjustments for smaller displays */
@@ -680,7 +681,7 @@ body {
     <!-- Weather Alert Banner -->
     {% if weather and weather.alerts and weather.alerts|length > 0 %}
     {% set alert = weather.alerts[0] %}
-    <div class="weather-alert-banner 
+    <div class="weather-alert-banner
         {% if 'severe' in alert.event.lower() or 'warning' in alert.event.lower() %}
             {% if 'tornado' in alert.event.lower() or 'severe thunderstorm' in alert.event.lower() %}severe{% else %}warning{% endif %}
         {% endif %}">
@@ -1068,17 +1069,17 @@ body {
         function createTestAlert(type = 'default', event = 'Heat Advisory', description = 'Excessive heat warning in effect. Temperatures may reach dangerous levels.') {
             // Remove existing test alert
             removeTestAlert();
-            
+
             const alertBanner = document.createElement('div');
             alertBanner.className = `weather-alert-banner test-alert ${type}`;
             alertBanner.id = 'test-alert-banner';
-            
+
             const now = new Date();
-            const startTime = now.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric'}) + ' ' + 
+            const startTime = now.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric'}) + ' ' +
                              now.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: false});
             const endTime = new Date(now.getTime() + 6 * 60 * 60 * 1000).toLocaleDateString('en-US', {month: 'numeric', day: 'numeric'}) + ' ' +
                            new Date(now.getTime() + 6 * 60 * 60 * 1000).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: false});
-            
+
             alertBanner.innerHTML = `
                 <div class="alert-icon">⚠️</div>
                 <div class="alert-content">
@@ -1087,7 +1088,7 @@ body {
                     <span class="alert-description">${description}</span>
                 </div>
             `;
-            
+
             document.body.insertBefore(alertBanner, document.body.firstChild);
         }
 
@@ -1102,7 +1103,7 @@ body {
         function checkTestParams() {
             const urlParams = new URLSearchParams(window.location.search);
             const testAlert = urlParams.get('test-alert');
-            
+
             if (testAlert) {
                 switch(testAlert.toLowerCase()) {
                     case 'severe':
@@ -1153,7 +1154,7 @@ body {
         // Update immediately and then every second
         updateTime();
         setInterval(updateTime, 1000);
-        
+
         // Check for test parameters on load
         checkTestParams();
     </script>

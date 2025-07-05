@@ -308,8 +308,6 @@ pi-dashboard/
 │   ├── generate_dashboard.py    # Main generator script
 │   ├── templates/              # Jinja2 templates
 │   │   └── dashboard.html
-│   ├── static/                 # CSS and static assets
-│   │   └── styles.css
 │   └── config/                 # Configuration files
 │       └── config.json
 ├── deployment/                 # Pi deployment files
@@ -317,6 +315,7 @@ pi-dashboard/
 │   ├── dashboard-updater.service
 │   └── install.sh
 ├── output/                     # Generated dashboard
+│    └── index.html
 ├── logs/                       # Application logs
 └── tests/                      # Test files
 ```

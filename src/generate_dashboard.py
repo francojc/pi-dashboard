@@ -683,7 +683,7 @@ class DashboardGenerator:
 
             # Process forecast data - group by day and get daily highs/lows
             forecast_days = {}
-            day_names = ['TODAY', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+            day_names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
             for item in data['list'][:40]:  # 5 days * 8 (3-hour intervals)
                 dt = datetime.fromtimestamp(item['dt'])
@@ -697,7 +697,7 @@ class DashboardGenerator:
                     if item_date == today:
                         day_name = 'TODAY'
                     else:
-                        day_name = day_names[dt.weekday() + 1] if dt.weekday() < 6 else day_names[0]
+                        day_name = day_names[dt.weekday()]
 
                     forecast_days[day_key] = {
                         'day': day_name,
