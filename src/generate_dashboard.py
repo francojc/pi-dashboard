@@ -114,21 +114,22 @@ class GoogleCalendarService:
                 logger.error(f"Failed to build calendar service: {e}")
                 self.service = None
 
-    def get_events(self, calendar_id='primary', max_results=10) -> List[Dict]:
-        """Fetch upcoming events from Google Calendar"""
+    def get_events(self, calendar_id='primary', max_results=20) -> List[Dict]:
+        """Fetch upcoming events from Google Calendar (start of today through next 7 days)"""
         if not self.service:
             logger.error("Calendar service not authenticated")
             return []
 
         try:
-            # Get events from now to end of day
+            # Get events from start of today to 7 days ahead to capture all-day events and future events
             now = datetime.utcnow()
-            end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+            start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            seven_days_ahead = start_of_today + timedelta(days=7)
 
             events_result = self.service.events().list(
                 calendarId=calendar_id,
-                timeMin=now.isoformat() + 'Z',
-                timeMax=end_of_day.isoformat() + 'Z',
+                timeMin=start_of_today.isoformat() + 'Z',
+                timeMax=seven_days_ahead.isoformat() + 'Z',
                 maxResults=max_results,
                 singleEvents=True,
                 orderBy='startTime'
@@ -160,6 +161,7 @@ class GoogleCalendarService:
                     'description': event.get('description', '')
                 })
 
+            logger.info(f"Successfully fetched {len(formatted_events)} calendar events")
             return formatted_events
 
         except Exception as e:
@@ -681,10 +683,18 @@ class DashboardGenerator:
                 calendar_id = calendar_config.get('calendar_id', 'primary')
                 max_events = calendar_config.get('max_events', 5)
                 events = self.calendar_service.get_events(calendar_id, max_events)
+                # Cache successful results for fallback
+                if events:
+                    self._save_calendar_cache(events)
                 logger.info(f"Fetched {len(events)} events from Google Calendar")
                 return events
             except Exception as e:
                 logger.error(f"Failed to fetch Google Calendar events: {e}")
+                # Try to load from cache as fallback
+                cached_events = self._load_calendar_cache()
+                if cached_events:
+                    logger.info(f"Using cached calendar events ({len(cached_events)} events)")
+                    return cached_events
                 # Fall back to mock data on error
 
         # Return mock data as fallback
@@ -749,6 +759,93 @@ class DashboardGenerator:
 
         return mock_week_events
 
+    def _format_events_for_ticker(self, events: List[Dict]) -> List[Dict]:
+        """Format calendar events for the ticker display"""
+        ticker_events = []
+        
+        try:
+            # Get current date for date formatting
+            now = datetime.now()
+            
+            for event in events:
+                if not event.get('summary'):
+                    continue
+                    
+                # Create a simple date format for the ticker
+                event_date = now.strftime('%b %d')
+                
+                # Try to parse the start time if it's available
+                start_time = event.get('start', '')
+                if start_time and start_time != 'All Day' and ':' in start_time:
+                    # It's a timed event
+                    event_date = f"{event_date} {start_time}"
+                elif start_time == 'All Day':
+                    # It's an all-day event
+                    event_date = f"{event_date} (All Day)"
+                
+                ticker_events.append({
+                    'date': event_date,
+                    'summary': event['summary']
+                })
+                
+                # Limit to 4 events for ticker performance
+                if len(ticker_events) >= 4:
+                    break
+                    
+        except Exception as e:
+            logger.error(f"Error formatting events for ticker: {e}")
+            # Return fallback events if formatting fails
+            return [
+                {'date': 'Today', 'summary': 'Independence Day'},
+                {'date': 'Jul 15', 'summary': 'Company All-Hands Meeting'},
+                {'date': 'Jul 20', 'summary': 'Team Building Retreat'},
+                {'date': 'Jul 28', 'summary': 'Q3 Planning Workshop'}
+            ]
+        
+        # If no events found, return a single fallback
+        if not ticker_events:
+            ticker_events = [{'date': 'Today', 'summary': 'No events scheduled'}]
+            
+        return ticker_events
+
+    def _save_calendar_cache(self, events: List[Dict]):
+        """Save calendar events to cache file for fallback"""
+        try:
+            cache_file = Path('logs/calendar_cache.json')
+            cache_data = {
+                'timestamp': datetime.now().isoformat(),
+                'events': events
+            }
+            with open(cache_file, 'w') as f:
+                json.dump(cache_data, f, indent=2)
+            logger.debug(f"Calendar cache saved with {len(events)} events")
+        except Exception as e:
+            logger.warning(f"Failed to save calendar cache: {e}")
+
+    def _load_calendar_cache(self) -> List[Dict]:
+        """Load calendar events from cache file"""
+        try:
+            cache_file = Path('logs/calendar_cache.json')
+            if not cache_file.exists():
+                return []
+                
+            with open(cache_file, 'r') as f:
+                cache_data = json.load(f)
+                
+            # Check if cache is recent (within 24 hours)
+            cache_time = datetime.fromisoformat(cache_data['timestamp'])
+            if datetime.now() - cache_time > timedelta(hours=24):
+                logger.info("Calendar cache is too old, ignoring")
+                return []
+                
+            events = cache_data.get('events', [])
+            logger.debug(f"Loaded {len(events)} events from calendar cache")
+            return events
+            
+        except Exception as e:
+            logger.warning(f"Failed to load calendar cache: {e}")
+            return []
+
     def copy_static_files(self):
         """Copy static files to output directory"""
         try:
@@ -797,13 +894,8 @@ class DashboardGenerator:
             # Calculate sun position for arc (real calculation)
             sun_position = self._calculate_sun_position(weather)
             
-            # Create upcoming events for ticker
-            upcoming_events = [
-                {'date': 'Jul 4', 'summary': 'Independence Day'},
-                {'date': 'Jul 15', 'summary': 'Company All-Hands Meeting'},
-                {'date': 'Jul 20', 'summary': 'Team Building Retreat'},
-                {'date': 'Jul 28', 'summary': 'Q3 Planning Workshop'}
-            ]
+            # Create upcoming events for ticker from real calendar data
+            upcoming_events = self._format_events_for_ticker(events)
             
             # Add UV level text
             uv_level = 'High' if weather and weather.get('uv_index', 6) > 5 else 'Moderate'
@@ -876,6 +968,7 @@ class DashboardGenerator:
                 'week_start_date': week_start_date,
                 'week_number': week_number,
                 'last_updated': now.strftime('%H:%M:%S'),
+                'cache_buster': int(now.timestamp()),
                 'config': self.config.get('display', {}),
                 # v2 template specific data
                 'air_quality': air_quality,
@@ -889,7 +982,7 @@ class DashboardGenerator:
             # Render template
             logger.info("Rendering dashboard template...")
             env = Environment(loader=FileSystemLoader(self.template_dir))
-            template = env.get_template('dashboard-v2.html')
+            template = env.get_template('dashboard.html')
             html_content = template.render(template_data)
 
             # Write output

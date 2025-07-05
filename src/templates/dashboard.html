@@ -4,267 +4,958 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="{{ config.refresh_interval | default(900) }}">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>Dashboard v2</title>
+    <style>
+/* Dashboard v2 - Card-Based Design */
+/* Optimized for Raspberry Pi B+ (512MB RAM) */
+
+/* CSS Custom Properties */
+:root {
+  /* Color Palette */
+  --primary: #64ffda;
+  --primary-dark: #00bcd4;
+  --bg-dark: #0f1419;
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --text-primary: #ffffff;
+  --text-secondary: #8892b0;
+  --text-accent: #64ffda;
+  
+  /* Effects (lightweight) */
+  --glass-border: 1px solid rgba(100, 255, 218, 0.1);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  
+  /* Spacing System */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 20px;
+  --spacing-lg: 25px;
+  
+  /* Layout */
+  --card-radius: 20px;
+  --grid-gap: 25px;
+  
+  /* Animation (with fallbacks) */
+  --ticker-speed: 60s;
+  --transition: 0.3s ease;
+}
+
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  padding: var(--spacing-lg);
+  line-height: 1.4;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+/* Hero Section */
+.hero-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.time-display {
+  text-align: left;
+}
+
+.current-time {
+  font-size: 5.5rem;
+  font-weight: 200;
+  line-height: 0.8;
+  margin-bottom: 8px;
+  background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.current-date {
+  font-size: 1.8rem;
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+
+.weather-hero {
+  text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.weather-main {
+  text-align: right;
+}
+
+.main-temp {
+  font-size: 4.5rem;
+  font-weight: 200;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.weather-desc {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+}
+
+.weather-meta {
+  font-size: 1rem;
+  color: var(--text-accent);
+}
+
+.weather-icon-large {
+  font-size: 5rem;
+  filter: drop-shadow(0 0 20px rgba(100, 255, 218, 0.3));
+}
+
+/* Content Grid */
+.content-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--grid-gap);
+  min-height: 0;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
+}
+
+/* Card Base Component */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--card-radius);
+  padding: var(--spacing-lg);
+  border: var(--glass-border);
+  box-shadow: var(--card-shadow);
+  /* Conditional backdrop-filter for performance */
+  backdrop-filter: blur(20px);
+}
+
+/* Performance fallback for older devices */
+@supports not (backdrop-filter: blur(20px)) {
+  .card {
+    background: rgba(30, 41, 59, 0.95);
+  }
+}
+
+.card-title {
+  font-size: 1.3rem;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
+/* Forecast Card */
+.forecast-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.forecast-item {
+  display: grid;
+  grid-template-columns: 80px 40px 1fr 80px;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.forecast-item:last-child {
+  border-bottom: none;
+}
+
+.forecast-day-name {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.forecast-icon-small {
+  width: 32px;
+  height: 32px;
+}
+
+.forecast-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.forecast-temp-range {
+  text-align: right;
+  font-size: 1rem;
+}
+
+.forecast-high {
+  font-weight: 600;
+}
+
+.forecast-low {
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+/* Local Info Card */
+.local-info-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.sun-arc-container {
+  position: relative;
+  height: 120px;
+  background: linear-gradient(to bottom, rgba(135, 206, 250, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%);
+  border-radius: 15px;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+}
+
+.sun-arc {
+  position: relative;
+  width: 100%;
+  height: 60px;
+  margin-bottom: 15px;
+}
+
+.arc-path {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+}
+
+.arc-line {
+  stroke: url(#arcGradient);
+  stroke-width: 6;
+  fill: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.arc-shadow {
+  stroke: rgba(0, 0, 0, 0.4);
+  stroke-width: 8;
+  fill: none;
+  opacity: 0.6;
+}
+
+.sun-position {
+  position: absolute;
+  bottom: 32px;
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 10px rgba(255, 223, 0, 0.6));
+  /* Simple animation for sun glow */
+  animation: glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { filter: drop-shadow(0 0 10px rgba(255, 223, 0, 0.6)); }
+  to { filter: drop-shadow(0 0 20px rgba(255, 223, 0, 0.8)); }
+}
+
+/* Disable animations on low-performance devices */
+@media (prefers-reduced-motion: reduce) {
+  .sun-position {
+    animation: none;
+  }
+}
+
+.time-markers {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.time-marker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.current-time-marker {
+  color: var(--text-accent);
+  font-weight: 600;
+}
+
+/* Environmental Metrics */
+.environmental-metrics {
+  display: flex;
+  justify-content: space-around;
+  gap: var(--spacing-md);
+  margin-top: 10px;
+}
+
+.metric-compact {
+  text-align: center;
+  flex: 1;
+}
+
+.metric-compact .metric-icon {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.metric-compact .metric-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+.metric-compact .metric-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.metric-compact .metric-subtext {
+  font-size: 0.65rem;
+  color: var(--text-accent);
+  margin-top: 1px;
+}
+
+/* Traffic Section */
+.commute-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.commute-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.commute-routes {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.route {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  background: rgba(100, 255, 218, 0.05);
+  border-radius: 8px;
+}
+
+.route-name {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.route-time {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.route-normal { color: #4ade80; }
+.route-slow { color: #fbbf24; }
+.route-heavy { color: #f87171; }
+
+/* Calendar Card */
+.calendar-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.month-year {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.week-info {
+  font-size: 0.9rem;
+  color: var(--text-accent);
+}
+
+/* Mini Calendar */
+.mini-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: var(--spacing-md);
+}
+
+.mini-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  background: rgba(100, 255, 218, 0.05);
+}
+
+.mini-day.header {
+  font-weight: 600;
+  color: var(--text-accent);
+  background: none;
+}
+
+.mini-day.today {
+  background: var(--text-accent);
+  color: var(--bg-dark);
+  font-weight: 600;
+}
+
+.mini-day.other-month {
+  opacity: 0.3;
+}
+
+/* Events List */
+.events-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.event-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-left: 3px solid var(--text-accent);
+  padding-left: 12px;
+  margin-bottom: 12px;
+  background: rgba(100, 255, 218, 0.05);
+  border-radius: 0 8px 8px 0;
+}
+
+.event-time-col {
+  min-width: 70px;
+  font-size: 0.85rem;
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
+.event-title {
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.all-day-event {
+  border-left-color: #f39c12;
+  background: rgba(243, 156, 18, 0.05);
+}
+
+.all-day-event .event-time-col {
+  color: #f39c12;
+}
+
+/* News Ticker Section */
+.news-section {
+  background: rgba(15, 20, 25, 0.9);
+  border-radius: 15px;
+  padding: 20px;
+  border: 1px solid rgba(100, 255, 218, 0.1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.calendar-ticker {
+  border-top: 1px solid rgba(100, 255, 218, 0.1);
+  padding-top: 15px;
+}
+
+.ticker-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.ticker-label {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(100, 255, 218, 0.15);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: #64ffda;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.news-ticker-label {
+  background: rgba(100, 255, 218, 0.15);
+  color: #64ffda;
+}
+
+.calendar-ticker-label {
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+}
+
+.ticker-scroll {
+  white-space: nowrap;
+  animation: slide 60s linear infinite;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.calendar-ticker-scroll {
+  animation: slide 45s linear infinite;
+  animation-delay: -15s;
+}
+
+@keyframes slide {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Disable ticker animation on low-performance devices */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-scroll {
+    animation: none;
+    transform: none;
+  }
+}
+
+.ticker-item {
+  display: inline-block;
+  margin-right: 80px;
+}
+
+.news-tag, .calendar-event {
+  color: var(--text-accent);
+  font-weight: 600;
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+
+.calendar-event {
+  color: #f39c12;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* Responsive adjustments for smaller displays */
+@media (max-width: 1200px) {
+  .current-time {
+    font-size: 4rem;
+  }
+  
+  .main-temp {
+    font-size: 3.5rem;
+  }
+  
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .left-column {
+    grid-row: 1;
+  }
+}
+
+/* Performance optimization */
+.ticker-scroll {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card {
+    border: 2px solid var(--text-accent);
+  }
+  
+  .ticker-label {
+    border: 1px solid currentColor;
+  }
+}
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Header Section -->
-        <header class="dashboard-header">
-            <div class="current-time">{{ current_time | default('12:05') }}</div>
-
-            <!-- Alert banner (conditional) -->
-            {% if alert %}
-            <div class="alert-banner">
-                <span class="alert-icon">{{ alert.icon | default('⚠️') }}</span>
-                <span>{{ alert.text }}</span>
-                <span>{{ alert.time | default('') }}</span>
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="time-display">
+                <div class="current-time">{{ current_time | default('14:32') }}</div>
+                <div class="current-date">{{ day_name | default('Friday') }}, {{ date_info | default('July 4') }}</div>
             </div>
-            {% endif %}
-
-            <div class="current-date">
-                <div class="day-name">{{ day_name | default('Friday') }}</div>
-                <div class="date-info">{{ date_info | default('July 4') }}</div>
-            </div>
-        </header>
-
-
-        <!-- Calendar Week View -->
-        <section class="calendar-widget">
-            <div class="calendar-header">
-                <h2>{{ current_month }} {{ current_year }}</h2>
-                <div class="week-range">Week of {{ week_start_date }}</div>
-            </div>
-
-            <div class="calendar-grid">
-                {% if week_events and week_events|length > 0 %}
-                {% for date_key in week_events.keys() | sort %}
-                {% set day_data = week_events[date_key] %}
-                <div class="day-column{% if day_data.is_today %} today{% endif %}" data-date="{{ date_key }}">
-                    <div class="day-header">
-                        <div class="day-name">{{ day_data.day_name }}</div>
-                        <div class="day-number">{{ day_data.day_number }}</div>
+            <div class="weather-hero">
+                <div class="weather-main">
+                    <div class="main-temp">{{ weather.temp | default('72') }}°</div>
+                    <div class="weather-desc">{{ weather.description | default('Partly Cloudy') }}</div>
+                    <div class="weather-meta">
+                        Feels like {{ weather.feels_like | default('75') }}° • UV Index {{ weather.uv_index | default('6') }}
                     </div>
-
-                    <!-- All-day events at top -->
-                    {% for event in day_data.all_day %}
-                    <div class="event-block all-day">
-                        <div class="event-title">{{ event.summary }}</div>
-                        {% if event.location %}
-                        <div class="event-location">📍 {{ event.location }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-
-                    <!-- Timed events -->
-                    {% for event in day_data.timed %}
-                    <div class="event-block timed">
-                        <div class="event-time">{{ event.start }}-{{ event.end }}</div>
-                        <div class="event-title">{{ event.summary }}</div>
-                        {% if event.location %}
-                        <div class="event-location">📍 {{ event.location }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% if weather and weather.icon %}
+                <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png" 
+                     alt="{{ weather.description }}" class="weather-icon-large">
                 {% else %}
-                <!-- Fallback mock calendar -->
-                <div class="day-column">
-                    <div class="day-header">
-                        <div class="day-name">Mon</div>
-                        <div class="day-number">1</div>
-                    </div>
-                </div>
-                <div class="day-column today">
-                    <div class="day-header">
-                        <div class="day-name">Tue</div>
-                        <div class="day-number">2</div>
-                    </div>
-                    <div class="event-block timed">
-                        <div class="event-time">09:00-09:30</div>
-                        <div class="event-title">Team Standup</div>
-                    </div>
-                    <div class="event-block all-day">
-                        <div class="event-title">Holiday</div>
-                    </div>
-                </div>
-                <div class="day-column">
-                    <div class="day-header">
-                        <div class="day-name">Wed</div>
-                        <div class="day-number">3</div>
-                    </div>
-                    <div class="event-block timed">
-                        <div class="event-time">14:00-15:00</div>
-                        <div class="event-title">Project Review</div>
-                    </div>
-                </div>
-                <div class="day-column">
-                    <div class="day-header">
-                        <div class="day-name">Thu</div>
-                        <div class="day-number">4</div>
-                    </div>
-                </div>
-                <div class="day-column">
-                    <div class="day-header">
-                        <div class="day-name">Fri</div>
-                        <div class="day-number">5</div>
-                    </div>
-                    <div class="event-block timed">
-                        <div class="event-time">16:00-17:00</div>
-                        <div class="event-title">Client Call</div>
-                    </div>
-                </div>
-                <div class="day-column">
-                    <div class="day-header">
-                        <div class="day-name">Sat</div>
-                        <div class="day-number">6</div>
-                    </div>
-                </div>
-                <div class="day-column">
-                    <div class="day-header">
-                        <div class="day-name">Sun</div>
-                        <div class="day-number">7</div>
-                    </div>
-                </div>
+                <div class="weather-icon-large">⛅</div>
                 {% endif %}
             </div>
         </section>
 
-        <!-- Weather section with forecast -->
-            <section class="weather-main">
-                <!-- Current weather -->
-                {% if weather %}
-                <div class="weather-current">
-                    <div class="weather-main-info">
-                        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png"
-                             alt="{{ weather.description }}" class="weather-icon">
-                        <div class="weather-temp-main">{{ weather.temp }}°</div>
-                    </div>
-                    <div class="weather-details">
-                        <div class="weather-detail">
-                            <span class="weather-detail-icon">○</span>
-                            <span>{{ weather.wind_speed }} {{ weather.wind_dir | default('wnw') }}</span>
-                        </div>
-                        <div class="weather-detail">
-                            <span class="weather-detail-icon">☉</span>
-                            <span>{{ weather.sunrise | default('8:05') }}</span>
-                        </div>
-                    </div>
-                </div>
-                {% else %}
-                <div class="weather-current">
-                    <div class="weather-main-info">
-                        <div class="weather-icon">☀</div>
-                        <div class="weather-temp-main">95°</div>
-                    </div>
-                    <div class="weather-details">
-                        <div class="weather-detail">
-                            <span class="weather-detail-icon">○</span>
-                            <span>7 wnw</span>
-                        </div>
-                        <div class="weather-detail">
-                            <span class="weather-detail-icon">☉</span>
-                            <span>8:05</span>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Weather forecast -->
-                <div class="weather-forecast">
-                        {% if forecast %}
-                        {% for day in forecast %}
-                        <div class="forecast-day">
-                            <div class="forecast-day-name">{{ day.day }}</div>
-                            <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png"
-                                 alt="{{ day.description }}" class="forecast-icon">
-                            <div class="forecast-temps">
-                                <span class="forecast-high">{{ day.high }}°</span>
-                                <span class="forecast-low">{{ day.low }}°</span>
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- 5-Day Forecast Card -->
+                <div class="card forecast-card">
+                    <h2 class="card-title">5-Day Outlook</h2>
+                    <div class="forecast-container">
+                        {% if forecast and forecast|length > 0 %}
+                            {% for day in forecast[:5] %}
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">{{ day.day | default('Today') }}</div>
+                                {% if day.icon %}
+                                <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" 
+                                     alt="{{ day.description }}" class="forecast-icon-small">
+                                {% else %}
+                                <div class="forecast-icon-small">☀️</div>
+                                {% endif %}
+                                <div class="forecast-desc">{{ day.description | default('Sunny') }}</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">{{ day.high | default('78') }}°</span>
+                                    <span class="forecast-low">{{ day.low | default('65') }}°</span>
+                                </div>
                             </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Fallback forecast data -->
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Today</div>
+                                <div class="forecast-icon-small">☀️</div>
+                                <div class="forecast-desc">Sunny and clear</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">78°</span>
+                                    <span class="forecast-low">65°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Tomorrow</div>
+                                <div class="forecast-icon-small">🌧️</div>
+                                <div class="forecast-desc">Light showers</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">70°</span>
+                                    <span class="forecast-low">62°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Monday</div>
+                                <div class="forecast-icon-small">⛅</div>
+                                <div class="forecast-desc">Partly cloudy</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">75°</span>
+                                    <span class="forecast-low">64°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Tuesday</div>
+                                <div class="forecast-icon-small">☀️</div>
+                                <div class="forecast-desc">Bright and sunny</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">80°</span>
+                                    <span class="forecast-low">68°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Wednesday</div>
+                                <div class="forecast-icon-small">⛅</div>
+                                <div class="forecast-desc">Mixed clouds</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">77°</span>
+                                    <span class="forecast-low">66°</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Local Info Card -->
+                <div class="card local-info-card">
+                    <h2 class="card-title">Local Information</h2>
+                    
+                    <!-- Sun Arc Visualization -->
+                    <div class="sun-arc-container">
+                        <div class="sun-arc">
+                            <svg class="arc-path" viewBox="0 0 200 60">
+                                <defs>
+                                    <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#FFD700;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#FF6347;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <path class="arc-shadow" d="M 10 50 Q 100 10 190 50" />
+                                <path class="arc-line" d="M 10 50 Q 100 10 190 50" />
+                            </svg>
+                            <div class="sun-position" style="left: {{ sun_position | default('35') }}%;">☀️</div>
+                        </div>
+                        <div class="time-markers">
+                            <div class="time-marker">
+                                <span class="marker-icon">🌅</span>
+                                <span>{{ weather.sunrise | default('6:24 AM') }}</span>
+                            </div>
+                            <div class="time-marker current-time-marker">
+                                <span>{{ current_time | default('2:32 PM') }}</span>
+                            </div>
+                            <div class="time-marker">
+                                <span class="marker-icon">🌇</span>
+                                <span>{{ weather.sunset | default('8:15 PM') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Environmental Metrics -->
+                    <div class="environmental-metrics">
+                        <div class="metric-compact">
+                            <div class="metric-icon">💨</div>
+                            <div class="metric-label">Air Quality</div>
+                            <div class="metric-value">{{ air_quality.status | default('Good') }}</div>
+                            <div class="metric-subtext">AQI {{ air_quality.aqi | default('45') }}</div>
+                        </div>
+                        <div class="metric-compact">
+                            <div class="metric-icon">☀️</div>
+                            <div class="metric-label">UV Index</div>
+                            <div class="metric-value">{{ weather.uv_index | default('6') }}</div>
+                            <div class="metric-subtext">{{ uv_level | default('High') }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Traffic Section -->
+                    <div class="commute-section">
+                        <div class="commute-label">Traffic Conditions</div>
+                        <div class="commute-routes">
+                            {% if traffic and traffic|length > 0 %}
+                                {% for route in traffic %}
+                                <div class="route">
+                                    <div class="route-name">{{ route.route }}</div>
+                                    <div class="route-time route-{{ route.status }}">{{ route.time }}</div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Fallback traffic data -->
+                                <div class="route">
+                                    <div class="route-name">I-40 East</div>
+                                    <div class="route-time route-normal">22 min</div>
+                                </div>
+                                <div class="route">
+                                    <div class="route-name">US-52 North</div>
+                                    <div class="route-time route-slow">28 min</div>
+                                </div>
+                                <div class="route">
+                                    <div class="route-name">Business 40</div>
+                                    <div class="route-time route-heavy">35 min</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Calendar Card -->
+            <div class="card calendar-card">
+                <h2 class="card-title">{{ current_month | default('July') }} {{ current_year | default('2025') }}</h2>
+                
+                <div class="calendar-header-info">
+                    <div class="month-year">{{ week_start_date | default('Independence Day Weekend') }}</div>
+                    <div class="week-info">Week {{ week_number | default('27') }}</div>
+                </div>
+                
+                <!-- Mini Calendar Grid -->
+                <div class="mini-calendar">
+                    <!-- Day headers -->
+                    {% for day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'] %}
+                    <div class="mini-day header">{{ day }}</div>
+                    {% endfor %}
+                    
+                    <!-- Calendar days - using fallback for now -->
+                    {% if month_days and month_days|length > 0 %}
+                        {% for day in month_days %}
+                        <div class="mini-day {% if day.is_today %}today{% endif %} {% if day.is_other_month %}other-month{% endif %}">
+                            {{ day.number }}
                         </div>
                         {% endfor %}
-                        {% else %}
-                        <div class="forecast-day">
-                            <div class="forecast-day-name">TODAY</div>
-                            <div class="forecast-icon">☀</div>
-                            <div class="forecast-temps">
-                                <span class="forecast-high">95°</span>
-                                <span class="forecast-low">64°</span>
-                            </div>
-                        </div>
-                        <div class="forecast-day">
-                            <div class="forecast-day-name">SAT</div>
-                            <div class="forecast-icon">☀</div>
-                            <div class="forecast-temps">
-                                <span class="forecast-high">104°</span>
-                                <span class="forecast-low">64°</span>
-                            </div>
-                        </div>
-                        <div class="forecast-day">
-                            <div class="forecast-day-name">SUN</div>
-                            <div class="forecast-icon">☀</div>
-                            <div class="forecast-temps">
-                                <span class="forecast-high">107°</span>
-                                <span class="forecast-low">64°</span>
-                            </div>
-                        </div>
-                        <div class="forecast-day">
-                            <div class="forecast-day-name">MON</div>
-                            <div class="forecast-icon">☁</div>
-                            <div class="forecast-temps">
-                                <span class="forecast-high">88°</span>
-                                <span class="forecast-low">62°</span>
-                            </div>
-                        </div>
-                        <div class="forecast-day">
-                            <div class="forecast-day-name">TUE</div>
-                            <div class="forecast-icon">☀</div>
-                            <div class="forecast-temps">
-                                <span class="forecast-high">91°</span>
-                                <span class="forecast-low">66°</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                </div>
-            </section>
-
-        <!-- News ticker section -->
-        <section class="news-ticker-container">
-            <div class="news-ticker-wrapper">
-                <div class="news-ticker-content" id="newsTicker">
-                    {% if articles %}
-                    {% for article in articles %}
-                    <span class="news-ticker-item">
-                        <span class="ticker-source">[{{ article.source }}]</span>
-                        <span class="ticker-title">{{ article.title }}</span>
-                    </span>
-                    {% if not loop.last %}<span class="ticker-separator">•</span>{% endif %}
-                    {% endfor %}
                     {% else %}
-                    <span class="news-ticker-item">
-                        <span class="ticker-source">[Financial News]</span>
-                        <span class="ticker-title">Markets respond to latest economic indicators</span>
-                    </span>
-                    <span class="ticker-separator">•</span>
-                    <span class="news-ticker-item">
-                        <span class="ticker-source">[Tech News]</span>
-                        <span class="ticker-title">Innovation drives technology sector growth</span>
-                    </span>
+                        <!-- Fallback calendar for July 2025 -->
+                        <div class="mini-day other-month">29</div>
+                        <div class="mini-day other-month">30</div>
+                        <div class="mini-day">1</div>
+                        <div class="mini-day">2</div>
+                        <div class="mini-day">3</div>
+                        <div class="mini-day today">4</div>
+                        <div class="mini-day">5</div>
+                        <div class="mini-day">6</div>
+                        <div class="mini-day">7</div>
+                        <div class="mini-day">8</div>
+                        <div class="mini-day">9</div>
+                        <div class="mini-day">10</div>
+                        <div class="mini-day">11</div>
+                        <div class="mini-day">12</div>
+                        <div class="mini-day">13</div>
+                        <div class="mini-day">14</div>
+                        <div class="mini-day">15</div>
+                        <div class="mini-day">16</div>
+                        <div class="mini-day">17</div>
+                        <div class="mini-day">18</div>
+                        <div class="mini-day">19</div>
+                        <div class="mini-day">20</div>
+                        <div class="mini-day">21</div>
+                        <div class="mini-day">22</div>
+                        <div class="mini-day">23</div>
+                        <div class="mini-day">24</div>
+                        <div class="mini-day">25</div>
+                        <div class="mini-day">26</div>
+                        <div class="mini-day">27</div>
+                        <div class="mini-day">28</div>
+                        <div class="mini-day">29</div>
+                        <div class="mini-day">30</div>
+                        <div class="mini-day">31</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Today's Events -->
+                <div class="events-list">
+                    {% if events and events|length > 0 %}
+                        {% for event in events %}
+                        <div class="event-item {% if event.start == 'All Day' %}all-day-event{% endif %}">
+                            <div class="event-time-col">
+                                {% if event.start == 'All Day' %}
+                                    All Day
+                                {% else %}
+                                    {{ event.start }}
+                                {% endif %}
+                            </div>
+                            <div class="event-title">{{ event.summary }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback events -->
+                        <div class="event-item all-day-event">
+                            <div class="event-time-col">All Day</div>
+                            <div class="event-title">Independence Day</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time-col">9:00 AM</div>
+                            <div class="event-title">Team Standup Meeting</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time-col">2:00 PM</div>
+                            <div class="event-title">Client Strategy Review</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time-col">4:00 PM</div>
+                            <div class="event-title">Q3 Project Planning</div>
+                        </div>
                     {% endif %}
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Footer -->
-        <footer class="dashboard-footer">
-            <p>Last updated: {{ last_updated }}</p>
-        </footer>
+        <!-- News/Events Ticker -->
+        <div class="news-section">
+            <!-- News Ticker -->
+            <div class="ticker-section">
+                <div class="ticker-label news-ticker-label">Live News</div>
+                <div class="ticker-scroll" id="newsTicker">
+                    {% if articles and articles|length > 0 %}
+                        {% for article in articles %}
+                        <span class="ticker-item">
+                            <span class="news-tag">[{{ article.source }}]</span>
+                            {{ article.title }}
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback news -->
+                        <span class="ticker-item">
+                            <span class="news-tag">[BBC]</span>
+                            Global climate summit reaches breakthrough agreement on carbon reduction targets
+                        </span>
+                        <span class="ticker-item">
+                            <span class="news-tag">[TECH]</span>
+                            New JavaScript framework promises 90% smaller bundle sizes with zero-config setup
+                        </span>
+                        <span class="ticker-item">
+                            <span class="news-tag">[LOCAL]</span>
+                            Winston-Salem announces new downtown development project
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Calendar Events Ticker -->
+            <div class="ticker-section calendar-ticker">
+                <div class="ticker-label calendar-ticker-label">Upcoming Events</div>
+                <div class="ticker-scroll calendar-ticker-scroll">
+                    {% if upcoming_events and upcoming_events|length > 0 %}
+                        {% for event in upcoming_events %}
+                        <span class="ticker-item">
+                            <span class="calendar-event">{{ event.date }}:</span>
+                            <span class="event-date">{{ event.summary }}</span>
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback upcoming events -->
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 4:</span>
+                            <span class="event-date">Independence Day</span>
+                        </span>
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 15:</span>
+                            <span class="event-date">Company All-Hands Meeting</span>
+                        </span>
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 20:</span>
+                            <span class="event-date">Team Building Retreat</span>
+                        </span>
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 28:</span>
+                            <span class="event-date">Q3 Planning Workshop</span>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Update time every second
+        // Update time every second (keep existing functionality)
         function updateTime() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-US', {
@@ -281,15 +972,9 @@
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'];
 
-            const dayEl = document.querySelector('.day-name');
-            const dateEl = document.querySelector('.date-info');
-
-            if (dayEl) {
-                dayEl.textContent = dayNames[now.getDay()];
-            }
-
+            const dateEl = document.querySelector('.current-date');
             if (dateEl) {
-                dateEl.textContent = monthNames[now.getMonth()] + ' ' + now.getDate();
+                dateEl.textContent = dayNames[now.getDay()] + ', ' + monthNames[now.getMonth()] + ' ' + now.getDate();
             }
         }
 
@@ -297,8 +982,5 @@
         updateTime();
         setInterval(updateTime, 1000);
     </script>
-
-    <!-- News Ticker JavaScript -->
-    <script src="static/ticker.js"></script>
 </body>
 </html>
