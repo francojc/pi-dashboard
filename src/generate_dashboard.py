@@ -360,11 +360,94 @@ class DashboardGenerator:
             return 35  # Safe middle position
 
     def fetch_weather(self) -> Optional[Dict]:
-        """Fetch weather data from OpenWeatherMap API"""
+        """Fetch weather data from OpenWeatherMap One Call API 3.0 with alerts"""
         try:
             config = self.config.get('weather', {})
             if not config.get('api_key'):
                 logger.warning("No weather API key configured")
+                return None
+
+            # First get coordinates using geocoding API
+            location = config.get('location', 'Winston-Salem,NC')
+            geocoding_url = "https://api.openweathermap.org/geo/1.0/direct"
+            geo_params = {
+                'q': location,
+                'appid': config['api_key'],
+                'limit': 1
+            }
+
+            geo_response = requests.get(geocoding_url, params=geo_params, timeout=10)
+            geo_response.raise_for_status()
+            geo_data = geo_response.json()
+
+            if not geo_data:
+                logger.warning(f"Could not find coordinates for location: {location}")
+                return self._fetch_weather_fallback()
+
+            lat, lon = geo_data[0]['lat'], geo_data[0]['lon']
+
+            # Use One Call API 3.0 for weather data with alerts
+            url = "https://api.openweathermap.org/data/3.0/onecall"
+            params = {
+                'lat': lat,
+                'lon': lon,
+                'appid': config['api_key'],
+                'units': config.get('units', 'imperial'),
+                'exclude': 'minutely,hourly'  # Only get current, daily, and alerts
+            }
+
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            current = data['current']
+
+            # Convert wind speed based on units
+            if config.get('units') == 'imperial':
+                wind_speed = round(current['wind_speed'], 1)  # mph
+                wind_unit = 'mph'
+            else:
+                wind_speed = round(current['wind_speed'] * 3.6, 1)  # Convert m/s to km/h
+                wind_unit = 'km/h'
+
+            # Process alerts if they exist
+            alerts = []
+            if 'alerts' in data:
+                for alert in data['alerts']:
+                    alerts.append({
+                        'sender_name': alert.get('sender_name', 'Weather Service'),
+                        'event': alert.get('event', 'Weather Alert'),
+                        'start': datetime.fromtimestamp(alert['start']).strftime('%m/%d %H:%M'),
+                        'end': datetime.fromtimestamp(alert['end']).strftime('%m/%d %H:%M'),
+                        'description': alert.get('description', ''),
+                        'tags': alert.get('tags', [])
+                    })
+
+            return {
+                'temp': round(current['temp']),
+                'feels_like': round(current['feels_like']),
+                'description': current['weather'][0]['description'].title(),
+                'icon': current['weather'][0]['icon'],
+                'humidity': current['humidity'],
+                'wind_speed': wind_speed,
+                'wind_unit': wind_unit,
+                'sunrise': datetime.fromtimestamp(current['sunrise']).strftime('%H:%M'),
+                'sunset': datetime.fromtimestamp(current['sunset']).strftime('%H:%M'),
+                'uv_index': round(current.get('uvi', 0)),
+                'alerts': alerts
+            }
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Weather fetch failed: {e}")
+            return self._fetch_weather_fallback()
+        except Exception as e:
+            logger.error(f"Unexpected error fetching weather: {e}")
+            return self._fetch_weather_fallback()
+
+    def _fetch_weather_fallback(self) -> Optional[Dict]:
+        """Fallback weather fetching using current weather API"""
+        try:
+            config = self.config.get('weather', {})
+            if not config.get('api_key'):
                 return None
 
             url = "https://api.openweathermap.org/data/2.5/weather"
@@ -396,10 +479,11 @@ class DashboardGenerator:
                 'wind_unit': wind_unit,
                 'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M'),
                 'sunset': datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M'),
-                'uv_index': self._calculate_mock_uv_index()  # Calculate realistic UV based on time and weather
+                'uv_index': self._calculate_mock_uv_index(),
+                'alerts': []  # No alerts in fallback
             }
         except requests.exceptions.RequestException as e:
-            logger.error(f"Weather fetch failed: {e}")
+            logger.error(f"Fallback weather fetch failed: {e}")
             return None
 
     def fetch_air_quality(self) -> Dict:

@@ -56,6 +56,75 @@ body {
   line-height: 1.4;
 }
 
+/* Weather Alert Banner */
+.weather-alert-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2vh;
+  min-height: 30px;
+  background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+  border-bottom: 2px solid rgba(255, 107, 107, 0.5);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-lg);
+  z-index: 1000;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+}
+
+.weather-alert-banner.severe {
+  background: linear-gradient(45deg, #dc2626, #b91c1c);
+  border-bottom-color: rgba(220, 38, 38, 0.5);
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4);
+}
+
+.weather-alert-banner.warning {
+  background: linear-gradient(45deg, #f59e0b, #d97706);
+  border-bottom-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+}
+
+.alert-icon {
+  font-size: 1.2rem;
+  margin-right: 10px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.alert-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  overflow: hidden;
+}
+
+.alert-event {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.alert-time {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.alert-description {
+  font-size: 0.9rem;
+  opacity: 0.95;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Dashboard Container */
 .dashboard-container {
   height: 100%;
@@ -66,12 +135,13 @@ body {
   margin: 0 auto;
 }
 
-/* Hero Section */
+/* Hero Section - Minimal space reservation for alert banner */
 .hero-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+  margin-top: 15px; /* Minimal spacing - alert may overlap slightly */
   flex-shrink: 0;
 }
 
@@ -607,6 +677,22 @@ body {
     </style>
 </head>
 <body>
+    <!-- Weather Alert Banner -->
+    {% if weather and weather.alerts and weather.alerts|length > 0 %}
+    {% set alert = weather.alerts[0] %}
+    <div class="weather-alert-banner 
+        {% if 'severe' in alert.event.lower() or 'warning' in alert.event.lower() %}
+            {% if 'tornado' in alert.event.lower() or 'severe thunderstorm' in alert.event.lower() %}severe{% else %}warning{% endif %}
+        {% endif %}">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+            <span class="alert-event">{{ alert.event }}</span>
+            <span class="alert-time">{{ alert.start }} - {{ alert.end }}</span>
+            <span class="alert-description">{{ alert.description | truncate(120) }}</span>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="dashboard-container">
         <!-- Hero Section -->
         <section class="hero-section">
@@ -978,9 +1064,98 @@ body {
             }
         }
 
+        // Weather Alert Testing Functions
+        function createTestAlert(type = 'default', event = 'Heat Advisory', description = 'Excessive heat warning in effect. Temperatures may reach dangerous levels.') {
+            // Remove existing test alert
+            removeTestAlert();
+            
+            const alertBanner = document.createElement('div');
+            alertBanner.className = `weather-alert-banner test-alert ${type}`;
+            alertBanner.id = 'test-alert-banner';
+            
+            const now = new Date();
+            const startTime = now.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric'}) + ' ' + 
+                             now.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: false});
+            const endTime = new Date(now.getTime() + 6 * 60 * 60 * 1000).toLocaleDateString('en-US', {month: 'numeric', day: 'numeric'}) + ' ' +
+                           new Date(now.getTime() + 6 * 60 * 60 * 1000).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: false});
+            
+            alertBanner.innerHTML = `
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                    <span class="alert-event">${event}</span>
+                    <span class="alert-time">${startTime} - ${endTime}</span>
+                    <span class="alert-description">${description}</span>
+                </div>
+            `;
+            
+            document.body.insertBefore(alertBanner, document.body.firstChild);
+        }
+
+        function removeTestAlert() {
+            const existing = document.getElementById('test-alert-banner');
+            if (existing) {
+                existing.remove();
+            }
+        }
+
+        // Check URL parameters for test alerts
+        function checkTestParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const testAlert = urlParams.get('test-alert');
+            
+            if (testAlert) {
+                switch(testAlert.toLowerCase()) {
+                    case 'severe':
+                        createTestAlert('severe', 'Tornado Warning', 'Tornado warning in effect for Winston-Salem and surrounding areas. Take shelter immediately.');
+                        break;
+                    case 'warning':
+                        createTestAlert('warning', 'Severe Thunderstorm Warning', 'Severe thunderstorm warning with damaging winds and large hail possible.');
+                        break;
+                    case 'heat':
+                        createTestAlert('warning', 'Heat Advisory', 'Excessive heat warning in effect. Heat index values up to 110 degrees expected.');
+                        break;
+                    case 'winter':
+                        createTestAlert('severe', 'Winter Storm Warning', 'Heavy snow and ice expected. Travel will be extremely dangerous or impossible.');
+                        break;
+                    case 'flood':
+                        createTestAlert('warning', 'Flood Watch', 'Flooding possible due to excessive rainfall. Monitor local conditions and avoid flooded roads.');
+                        break;
+                    default:
+                        createTestAlert('default', 'Weather Advisory', 'General weather advisory in effect for the local area.');
+                }
+            }
+        }
+
+        // Keyboard shortcuts for testing (Ctrl + Alt + number)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.altKey) {
+                switch(e.key) {
+                    case '1':
+                        createTestAlert('default', 'Weather Advisory', 'General weather advisory in effect for the local area.');
+                        e.preventDefault();
+                        break;
+                    case '2':
+                        createTestAlert('warning', 'Heat Advisory', 'Excessive heat warning in effect. Heat index values up to 110 degrees expected.');
+                        e.preventDefault();
+                        break;
+                    case '3':
+                        createTestAlert('severe', 'Tornado Warning', 'Tornado warning in effect for Winston-Salem and surrounding areas. Take shelter immediately.');
+                        e.preventDefault();
+                        break;
+                    case '0':
+                        removeTestAlert();
+                        e.preventDefault();
+                        break;
+                }
+            }
+        });
+
         // Update immediately and then every second
         updateTime();
         setInterval(updateTime, 1000);
+        
+        // Check for test parameters on load
+        checkTestParams();
     </script>
 </body>
 </html>
