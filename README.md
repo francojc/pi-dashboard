@@ -56,7 +56,7 @@ The installation script automatically configures most settings for kiosk mode, b
 1. Download [Raspberry Pi OS Lite](https://www.raspberrypi.org/software/operating-systems/) (32-bit)
 2. Flash to SD card using [Raspberry Pi Imager](https://www.raspberrypi.org/software/)
 3. Enable SSH by creating empty `ssh` file in boot partition
-4. Boot Pi and SSH in: `ssh pi@raspberrypi.local` (default user is `pi`)
+4. Boot Pi and SSH in: `ssh pi@raspberrypi.local` (default user is `pi` and password is `raspberry`)
 
 #### 2. Basic System Configuration
 
