@@ -19,21 +19,21 @@
   --text-primary: #ffffff;
   --text-secondary: #8892b0;
   --text-accent: #64ffda;
-  
+
   /* Effects (lightweight) */
   --glass-border: 1px solid rgba(100, 255, 218, 0.1);
   --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  
+
   /* Spacing System */
   --spacing-xs: 8px;
   --spacing-sm: 12px;
   --spacing-md: 20px;
   --spacing-lg: 25px;
-  
+
   /* Layout */
   --card-radius: 20px;
   --grid-gap: 25px;
-  
+
   /* Animation (with fallbacks) */
   --ticker-speed: 60s;
   --transition: 0.3s ease;
@@ -574,15 +574,15 @@ body {
   .current-time {
     font-size: 4rem;
   }
-  
+
   .main-temp {
     font-size: 3.5rem;
   }
-  
+
   .content-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .left-column {
     grid-row: 1;
   }
@@ -599,7 +599,7 @@ body {
   .card {
     border: 2px solid var(--text-accent);
   }
-  
+
   .ticker-label {
     border: 1px solid currentColor;
   }
@@ -619,11 +619,11 @@ body {
                     <div class="main-temp">{{ weather.temp | default('72') }}°</div>
                     <div class="weather-desc">{{ weather.description | default('Partly Cloudy') }}</div>
                     <div class="weather-meta">
-                        Feels like {{ weather.feels_like | default('75') }}° • UV Index {{ weather.uv_index | default('6') }}
+                        Feels like {{ weather.feels_like | default('75') }}°
                     </div>
                 </div>
                 {% if weather and weather.icon %}
-                <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png" 
+                <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png"
                      alt="{{ weather.description }}" class="weather-icon-large">
                 {% else %}
                 <div class="weather-icon-large">⛅</div>
@@ -644,7 +644,7 @@ body {
                             <div class="forecast-item">
                                 <div class="forecast-day-name">{{ day.day | default('Today') }}</div>
                                 {% if day.icon %}
-                                <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" 
+                                <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png"
                                      alt="{{ day.description }}" class="forecast-icon-small">
                                 {% else %}
                                 <div class="forecast-icon-small">☀️</div>
@@ -710,7 +710,7 @@ body {
                 <!-- Local Info Card -->
                 <div class="card local-info-card">
                     <h2 class="card-title">Local Information</h2>
-                    
+
                     <!-- Sun Arc Visualization -->
                     <div class="sun-arc-container">
                         <div class="sun-arc">
@@ -741,7 +741,7 @@ body {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Environmental Metrics -->
                     <div class="environmental-metrics">
                         <div class="metric-compact">
@@ -757,7 +757,7 @@ body {
                             <div class="metric-subtext">{{ uv_level | default('High') }}</div>
                         </div>
                     </div>
-                    
+
                     <!-- Traffic Section -->
                     <div class="commute-section">
                         <div class="commute-label">Traffic Conditions</div>
@@ -792,19 +792,19 @@ body {
             <!-- Right Column - Calendar Card -->
             <div class="card calendar-card">
                 <h2 class="card-title">{{ current_month | default('July') }} {{ current_year | default('2025') }}</h2>
-                
+
                 <div class="calendar-header-info">
                     <div class="month-year">{{ week_start_date | default('Independence Day Weekend') }}</div>
                     <div class="week-info">Week {{ week_number | default('27') }}</div>
                 </div>
-                
+
                 <!-- Mini Calendar Grid -->
                 <div class="mini-calendar">
                     <!-- Day headers -->
                     {% for day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'] %}
                     <div class="mini-day header">{{ day }}</div>
                     {% endfor %}
-                    
+
                     <!-- Calendar days - using fallback for now -->
                     {% if month_days and month_days|length > 0 %}
                         {% for day in month_days %}
@@ -849,7 +849,7 @@ body {
                         <div class="mini-day">31</div>
                     {% endif %}
                 </div>
-                
+
                 <!-- Today's Events -->
                 <div class="events-list">
                     {% if events and events|length > 0 %}
@@ -918,7 +918,7 @@ body {
                     {% endif %}
                 </div>
             </div>
-            
+
             <!-- Calendar Events Ticker -->
             <div class="ticker-section calendar-ticker">
                 <div class="ticker-label calendar-ticker-label">Upcoming Events</div>
