@@ -519,10 +519,6 @@ body {
   will-change: transform;
 }
 
-.news-ticker-content.paused {
-  animation-play-state: paused;
-}
-
 @keyframes scroll {
   0% {
     transform: translateX(100%);
@@ -600,15 +596,15 @@ body {
   .news-ticker-content {
     animation-duration: 45s;
   }
-  
+
   .ticker-source {
     font-size: 1rem;
   }
-  
+
   .ticker-title {
     font-size: 1.1rem;
   }
-  
+
   .ticker-separator {
     margin: 0 var(--spacing-md);
   }
@@ -632,15 +628,15 @@ body {
   .current-time {
     font-size: 6rem;
   }
-  
+
   .weather-temp-main {
     font-size: 7rem;
   }
-  
+
   .day-column {
     min-height: 200px;
   }
-  
+
   .calendar-header h2 {
     font-size: 2rem;
   }

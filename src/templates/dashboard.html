@@ -12,7 +12,7 @@
         <!-- Header Section -->
         <header class="dashboard-header">
             <div class="current-time">{{ current_time | default('12:05') }}</div>
-            
+
             <!-- Alert banner (conditional) -->
             {% if alert %}
             <div class="alert-banner">
@@ -21,7 +21,7 @@
                 <span>{{ alert.time | default('') }}</span>
             </div>
             {% endif %}
-            
+
             <div class="current-date">
                 <div class="day-name">{{ day_name | default('Friday') }}</div>
                 <div class="date-info">{{ date_info | default('July 4') }}</div>
@@ -35,7 +35,7 @@
                 <h2>{{ current_month }} {{ current_year }}</h2>
                 <div class="week-range">Week of {{ week_start_date }}</div>
             </div>
-            
+
             <div class="calendar-grid">
                 {% if week_events and week_events|length > 0 %}
                 {% for date_key in week_events.keys() | sort %}
@@ -45,7 +45,7 @@
                         <div class="day-name">{{ day_data.day_name }}</div>
                         <div class="day-number">{{ day_data.day_number }}</div>
                     </div>
-                    
+
                     <!-- All-day events at top -->
                     {% for event in day_data.all_day %}
                     <div class="event-block all-day">
@@ -55,7 +55,7 @@
                         {% endif %}
                     </div>
                     {% endfor %}
-                    
+
                     <!-- Timed events -->
                     {% for event in day_data.timed %}
                     <div class="event-block timed">
@@ -137,7 +137,7 @@
                 {% if weather %}
                 <div class="weather-current">
                     <div class="weather-main-info">
-                        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png" 
+                        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png"
                              alt="{{ weather.description }}" class="weather-icon">
                         <div class="weather-temp-main">{{ weather.temp }}°</div>
                     </div>
@@ -170,14 +170,14 @@
                     </div>
                 </div>
                 {% endif %}
-                
+
                 <!-- Weather forecast -->
                 <div class="weather-forecast">
                         {% if forecast %}
                         {% for day in forecast %}
                         <div class="forecast-day">
                             <div class="forecast-day-name">{{ day.day }}</div>
-                            <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" 
+                            <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png"
                                  alt="{{ day.description }}" class="forecast-icon">
                             <div class="forecast-temps">
                                 <span class="forecast-high">{{ day.high }}°</span>
@@ -255,9 +255,6 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="ticker-controls">
-                <button class="ticker-control-btn" id="tickerPlayPause" aria-label="Play/Pause ticker">⏸️</button>
-            </div>
         </section>
 
         <!-- Footer -->
@@ -270,37 +267,37 @@
         // Update time every second
         function updateTime() {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit', 
-                hour12: false 
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: false
             });
             const timeEl = document.querySelector('.current-time');
             if (timeEl) {
                 timeEl.textContent = timeStr;
             }
-            
+
             const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'];
-            
+
             const dayEl = document.querySelector('.day-name');
             const dateEl = document.querySelector('.date-info');
-            
+
             if (dayEl) {
                 dayEl.textContent = dayNames[now.getDay()];
             }
-            
+
             if (dateEl) {
                 dateEl.textContent = monthNames[now.getMonth()] + ' ' + now.getDate();
             }
         }
-        
+
         // Update immediately and then every second
         updateTime();
         setInterval(updateTime, 1000);
     </script>
-    
+
     <!-- News Ticker JavaScript -->
     <script src="static/ticker.js"></script>
 </body>
