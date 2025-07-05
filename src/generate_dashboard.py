@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import logging
+import shutil
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -260,8 +261,11 @@ class DashboardGenerator:
         """Initialize the dashboard generator with configuration"""
         self.config = self._load_config(config_path)
         self.template_dir = Path("src/templates")
+        self.static_dir = Path("src/static")
         self.output_dir = Path("output")
         self.output_dir.mkdir(exist_ok=True)
+        self.output_static_dir = self.output_dir / "static"
+        self.output_static_dir.mkdir(exist_ok=True)
         self.calendar_service = None
         if not self.config.get('calendar', {}).get('use_mock_data', True):
             try:
@@ -498,9 +502,26 @@ class DashboardGenerator:
 
         return mock_week_events
 
+    def copy_static_files(self):
+        """Copy static files to output directory"""
+        try:
+            if self.static_dir.exists():
+                # Copy all files from src/static to output/static
+                for file_path in self.static_dir.glob('*'):
+                    if file_path.is_file():
+                        dest_path = self.output_static_dir / file_path.name
+                        shutil.copy2(file_path, dest_path)
+                        logger.debug(f"Copied {file_path} to {dest_path}")
+                logger.info(f"Static files copied to {self.output_static_dir}")
+        except Exception as e:
+            logger.error(f"Failed to copy static files: {e}")
+
     def generate_dashboard(self):
         """Generate the dashboard HTML"""
         try:
+            # Copy static files first
+            self.copy_static_files()
+            
             # Fetch all data
             logger.info("Fetching dashboard data...")
             weather = self.fetch_weather()
@@ -587,7 +608,7 @@ class DashboardGenerator:
             # Render template
             logger.info("Rendering dashboard template...")
             env = Environment(loader=FileSystemLoader(self.template_dir))
-            template = env.get_template('dashboard.html')
+            template = env.get_template('dashboard-v2.html')
             html_content = template.render(template_data)
 
             # Write output
