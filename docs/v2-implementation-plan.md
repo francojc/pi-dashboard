@@ -60,6 +60,7 @@ Transform to card-based layout matching the v2 mockup while maintaining the same
 **Goal**: Add minimal new data features
 
 **Tasks:**
+
 1. ✅ Add UV index to weather data (realistic time-based calculation)
 2. ✅ Create realistic traffic mock data with time/day variation
 3. ✅ Enhance calendar to show complete month grid with prev/next month days
@@ -67,12 +68,14 @@ Transform to card-based layout matching the v2 mockup while maintaining the same
 5. ✅ Create real sun position calculator based on sunrise/sunset times
 
 **Key considerations:**
+
 - ✅ Used existing OpenWeather API for air quality where available
 - ✅ Implemented realistic mock data for traffic and air quality
 - ✅ Maintained minimal API calls to stay within free tiers
 - ✅ Added comprehensive fallback data for offline scenarios
 
 **Enhancements Delivered:**
+
 - **UV Index**: Time and season-based realistic calculation with solar noon peak
 - **Sun Position**: Real calculation using sunrise/sunset times for accurate arc positioning
 - **Air Quality**: OpenWeather Air Pollution API integration with time-based mock fallback
@@ -82,6 +85,7 @@ Transform to card-based layout matching the v2 mockup while maintaining the same
 ## Implementation Details
 
 ### Stage 1: CSS Structure
+
 ```css
 /* Simple CSS custom properties */
 :root {
@@ -111,6 +115,7 @@ Transform to card-based layout matching the v2 mockup while maintaining the same
 ```
 
 ### Stage 2: HTML Structure
+
 ```html
 <!-- Keep it simple - reuse existing template variables -->
 <div class="dashboard-container">
@@ -142,6 +147,7 @@ Transform to card-based layout matching the v2 mockup while maintaining the same
 ```
 
 ### Stage 3: Minimal Python Enhancements
+
 ```python
 # Add to existing DashboardGenerator class
 def fetch_enhanced_weather(self):
@@ -166,6 +172,7 @@ def calculate_sun_position(self):
 ```
 
 ## Testing Approach
+
 1. Test each stage on actual Pi hardware
 2. Monitor memory usage with `free -h`
 3. Check page load times
@@ -173,6 +180,7 @@ def calculate_sun_position(self):
 5. Ensure dashboard still updates every 15 minutes
 
 ## Success Criteria
+
 - Matches v2 mockup visually
 - Loads in under 3 seconds on Pi B+
 - Memory usage stays under 100MB for Chromium
@@ -180,6 +188,7 @@ def calculate_sun_position(self):
 - Maintains existing reliability and update schedule
 
 ## Constraints Respected
+
 - No new API subscriptions required
 - Works within 512MB RAM limit
 - Compatible with existing systemd setup
@@ -188,6 +197,7 @@ def calculate_sun_position(self):
 - Optimized for vertical display orientation
 
 ## Risk Mitigation
+
 - Test performance after each stage
 - Keep original files as backup
 - Use CSS feature queries for glassmorphism fallbacks
@@ -199,6 +209,7 @@ This simplified plan respects the project's hobbyist nature and hardware constra
 ## Project Status: COMPLETED ✅
 
 **Implementation Results:**
+
 - **All 3 stages completed successfully**
 - **Visual transformation**: Modern card-based design with glassmorphism effects
 - **Enhanced features**: Real-time UV, sun position, air quality, traffic patterns, complete calendar
@@ -206,11 +217,13 @@ This simplified plan respects the project's hobbyist nature and hardware constra
 - **Reliability preserved**: Fallback systems for all new features
 
 **Key Achievements:**
+
 1. **Stage 1**: Created performant glassmorphism design with Pi B+ optimizations
 2. **Stage 2**: Successfully migrated to card-based layout with automatic static file handling
 3. **Stage 3**: Implemented enhanced data features with realistic mock fallbacks
 
 **Technical Highlights:**
+
 - Integrated OpenWeather Air Pollution API with 1M monthly call free tier
 - Real sun position calculation using sunrise/sunset data
 - Time/season-based UV index simulation
