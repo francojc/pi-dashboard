@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="{{ config.refresh_interval | default(900) }}">
+    <title>Dashboard v2</title>
+    <link rel="stylesheet" href="/static/styles-v2.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="time-display">
+                <div class="current-time">{{ current_time | default('14:32') }}</div>
+                <div class="current-date">{{ day_name | default('Friday') }}, {{ date_info | default('July 4') }}</div>
+            </div>
+            <div class="weather-hero">
+                <div class="weather-main">
+                    <div class="main-temp">{{ weather.temp | default('72') }}°</div>
+                    <div class="weather-desc">{{ weather.description | default('Partly Cloudy') }}</div>
+                    <div class="weather-meta">
+                        Feels like {{ weather.feels_like | default('75') }}° • UV Index {{ weather.uv_index | default('6') }}
+                    </div>
+                </div>
+                {% if weather and weather.icon %}
+                <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png" 
+                     alt="{{ weather.description }}" class="weather-icon-large">
+                {% else %}
+                <div class="weather-icon-large">⛅</div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- 5-Day Forecast Card -->
+                <div class="card forecast-card">
+                    <h2 class="card-title">5-Day Outlook</h2>
+                    <div class="forecast-container">
+                        {% if forecast and forecast|length > 0 %}
+                            {% for day in forecast[:5] %}
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">{{ day.day | default('Today') }}</div>
+                                {% if day.icon %}
+                                <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" 
+                                     alt="{{ day.description }}" class="forecast-icon-small">
+                                {% else %}
+                                <div class="forecast-icon-small">☀️</div>
+                                {% endif %}
+                                <div class="forecast-desc">{{ day.description | default('Sunny') }}</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">{{ day.high | default('78') }}°</span>
+                                    <span class="forecast-low">{{ day.low | default('65') }}°</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Fallback forecast data -->
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Today</div>
+                                <div class="forecast-icon-small">☀️</div>
+                                <div class="forecast-desc">Sunny and clear</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">78°</span>
+                                    <span class="forecast-low">65°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Tomorrow</div>
+                                <div class="forecast-icon-small">🌧️</div>
+                                <div class="forecast-desc">Light showers</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">70°</span>
+                                    <span class="forecast-low">62°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Monday</div>
+                                <div class="forecast-icon-small">⛅</div>
+                                <div class="forecast-desc">Partly cloudy</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">75°</span>
+                                    <span class="forecast-low">64°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Tuesday</div>
+                                <div class="forecast-icon-small">☀️</div>
+                                <div class="forecast-desc">Bright and sunny</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">80°</span>
+                                    <span class="forecast-low">68°</span>
+                                </div>
+                            </div>
+                            <div class="forecast-item">
+                                <div class="forecast-day-name">Wednesday</div>
+                                <div class="forecast-icon-small">⛅</div>
+                                <div class="forecast-desc">Mixed clouds</div>
+                                <div class="forecast-temp-range">
+                                    <span class="forecast-high">77°</span>
+                                    <span class="forecast-low">66°</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Local Info Card -->
+                <div class="card local-info-card">
+                    <h2 class="card-title">Local Information</h2>
+                    
+                    <!-- Sun Arc Visualization -->
+                    <div class="sun-arc-container">
+                        <div class="sun-arc">
+                            <svg class="arc-path" viewBox="0 0 200 60">
+                                <defs>
+                                    <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#FFD700;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#FF6347;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <path class="arc-shadow" d="M 10 50 Q 100 10 190 50" />
+                                <path class="arc-line" d="M 10 50 Q 100 10 190 50" />
+                            </svg>
+                            <div class="sun-position" style="left: {{ sun_position | default('35') }}%;">☀️</div>
+                        </div>
+                        <div class="time-markers">
+                            <div class="time-marker">
+                                <span class="marker-icon">🌅</span>
+                                <span>{{ weather.sunrise | default('6:24 AM') }}</span>
+                            </div>
+                            <div class="time-marker current-time-marker">
+                                <span>{{ current_time | default('2:32 PM') }}</span>
+                            </div>
+                            <div class="time-marker">
+                                <span class="marker-icon">🌇</span>
+                                <span>{{ weather.sunset | default('8:15 PM') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Environmental Metrics -->
+                    <div class="environmental-metrics">
+                        <div class="metric-compact">
+                            <div class="metric-icon">💨</div>
+                            <div class="metric-label">Air Quality</div>
+                            <div class="metric-value">{{ air_quality.status | default('Good') }}</div>
+                            <div class="metric-subtext">AQI {{ air_quality.aqi | default('45') }}</div>
+                        </div>
+                        <div class="metric-compact">
+                            <div class="metric-icon">☀️</div>
+                            <div class="metric-label">UV Index</div>
+                            <div class="metric-value">{{ weather.uv_index | default('6') }}</div>
+                            <div class="metric-subtext">{{ uv_level | default('High') }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Traffic Section -->
+                    <div class="commute-section">
+                        <div class="commute-label">Traffic Conditions</div>
+                        <div class="commute-routes">
+                            {% if traffic and traffic|length > 0 %}
+                                {% for route in traffic %}
+                                <div class="route">
+                                    <div class="route-name">{{ route.route }}</div>
+                                    <div class="route-time route-{{ route.status }}">{{ route.time }}</div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Fallback traffic data -->
+                                <div class="route">
+                                    <div class="route-name">I-40 East</div>
+                                    <div class="route-time route-normal">22 min</div>
+                                </div>
+                                <div class="route">
+                                    <div class="route-name">US-52 North</div>
+                                    <div class="route-time route-slow">28 min</div>
+                                </div>
+                                <div class="route">
+                                    <div class="route-name">Business 40</div>
+                                    <div class="route-time route-heavy">35 min</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Calendar Card -->
+            <div class="card calendar-card">
+                <h2 class="card-title">{{ current_month | default('July') }} {{ current_year | default('2025') }}</h2>
+                
+                <div class="calendar-header-info">
+                    <div class="month-year">{{ week_start_date | default('Independence Day Weekend') }}</div>
+                    <div class="week-info">Week {{ week_number | default('27') }}</div>
+                </div>
+                
+                <!-- Mini Calendar Grid -->
+                <div class="mini-calendar">
+                    <!-- Day headers -->
+                    {% for day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'] %}
+                    <div class="mini-day header">{{ day }}</div>
+                    {% endfor %}
+                    
+                    <!-- Calendar days - using fallback for now -->
+                    {% if month_days and month_days|length > 0 %}
+                        {% for day in month_days %}
+                        <div class="mini-day {% if day.is_today %}today{% endif %} {% if day.is_other_month %}other-month{% endif %}">
+                            {{ day.number }}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback calendar for July 2025 -->
+                        <div class="mini-day other-month">29</div>
+                        <div class="mini-day other-month">30</div>
+                        <div class="mini-day">1</div>
+                        <div class="mini-day">2</div>
+                        <div class="mini-day">3</div>
+                        <div class="mini-day today">4</div>
+                        <div class="mini-day">5</div>
+                        <div class="mini-day">6</div>
+                        <div class="mini-day">7</div>
+                        <div class="mini-day">8</div>
+                        <div class="mini-day">9</div>
+                        <div class="mini-day">10</div>
+                        <div class="mini-day">11</div>
+                        <div class="mini-day">12</div>
+                        <div class="mini-day">13</div>
+                        <div class="mini-day">14</div>
+                        <div class="mini-day">15</div>
+                        <div class="mini-day">16</div>
+                        <div class="mini-day">17</div>
+                        <div class="mini-day">18</div>
+                        <div class="mini-day">19</div>
+                        <div class="mini-day">20</div>
+                        <div class="mini-day">21</div>
+                        <div class="mini-day">22</div>
+                        <div class="mini-day">23</div>
+                        <div class="mini-day">24</div>
+                        <div class="mini-day">25</div>
+                        <div class="mini-day">26</div>
+                        <div class="mini-day">27</div>
+                        <div class="mini-day">28</div>
+                        <div class="mini-day">29</div>
+                        <div class="mini-day">30</div>
+                        <div class="mini-day">31</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Today's Events -->
+                <div class="events-list">
+                    {% if events and events|length > 0 %}
+                        {% for event in events %}
+                        <div class="event-item {% if event.start == 'All Day' %}all-day-event{% endif %}">
+                            <div class="event-time-col">
+                                {% if event.start == 'All Day' %}
+                                    All Day
+                                {% else %}
+                                    {{ event.start }}
+                                {% endif %}
+                            </div>
+                            <div class="event-title">{{ event.summary }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback events -->
+                        <div class="event-item all-day-event">
+                            <div class="event-time-col">All Day</div>
+                            <div class="event-title">Independence Day</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time-col">9:00 AM</div>
+                            <div class="event-title">Team Standup Meeting</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time-col">2:00 PM</div>
+                            <div class="event-title">Client Strategy Review</div>
+                        </div>
+                        <div class="event-item">
+                            <div class="event-time-col">4:00 PM</div>
+                            <div class="event-title">Q3 Project Planning</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- News/Events Ticker -->
+        <div class="news-section">
+            <!-- News Ticker -->
+            <div class="ticker-section">
+                <div class="ticker-label news-ticker-label">Live News</div>
+                <div class="ticker-scroll" id="newsTicker">
+                    {% if articles and articles|length > 0 %}
+                        {% for article in articles %}
+                        <span class="ticker-item">
+                            <span class="news-tag">[{{ article.source }}]</span>
+                            {{ article.title }}
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback news -->
+                        <span class="ticker-item">
+                            <span class="news-tag">[BBC]</span>
+                            Global climate summit reaches breakthrough agreement on carbon reduction targets
+                        </span>
+                        <span class="ticker-item">
+                            <span class="news-tag">[TECH]</span>
+                            New JavaScript framework promises 90% smaller bundle sizes with zero-config setup
+                        </span>
+                        <span class="ticker-item">
+                            <span class="news-tag">[LOCAL]</span>
+                            Winston-Salem announces new downtown development project
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Calendar Events Ticker -->
+            <div class="ticker-section calendar-ticker">
+                <div class="ticker-label calendar-ticker-label">Upcoming Events</div>
+                <div class="ticker-scroll calendar-ticker-scroll">
+                    {% if upcoming_events and upcoming_events|length > 0 %}
+                        {% for event in upcoming_events %}
+                        <span class="ticker-item">
+                            <span class="calendar-event">{{ event.date }}:</span>
+                            <span class="event-date">{{ event.summary }}</span>
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback upcoming events -->
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 4:</span>
+                            <span class="event-date">Independence Day</span>
+                        </span>
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 15:</span>
+                            <span class="event-date">Company All-Hands Meeting</span>
+                        </span>
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 20:</span>
+                            <span class="event-date">Team Building Retreat</span>
+                        </span>
+                        <span class="ticker-item">
+                            <span class="calendar-event">Jul 28:</span>
+                            <span class="event-date">Q3 Planning Workshop</span>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update time every second (keep existing functionality)
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: false
+            });
+            const timeEl = document.querySelector('.current-time');
+            if (timeEl) {
+                timeEl.textContent = timeStr;
+            }
+
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+
+            const dateEl = document.querySelector('.current-date');
+            if (dateEl) {
+                dateEl.textContent = dayNames[now.getDay()] + ', ' + monthNames[now.getMonth()] + ' ' + now.getDate();
+            }
+        }
+
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>

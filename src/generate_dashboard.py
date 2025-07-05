@@ -318,7 +318,8 @@ class DashboardGenerator:
                 'wind_speed': wind_speed,
                 'wind_unit': wind_unit,
                 'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M'),
-                'sunset': datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M')
+                'sunset': datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M'),
+                'uv_index': 6  # Mock UV index since one-call API needed for real UV data
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Weather fetch failed: {e}")
@@ -519,6 +520,44 @@ class DashboardGenerator:
             week_start_date = f"{month_names[monday.month - 1]} {monday.day}"
             current_month = month_names[now.month - 1]
             current_year = now.year
+            week_number = now.isocalendar()[1]
+
+            # Mock data for v2 template features
+            air_quality = {'status': 'Good', 'aqi': 45}
+            traffic = [
+                {'route': 'I-40 East', 'time': '22 min', 'status': 'normal'},
+                {'route': 'US-52 North', 'time': '28 min', 'status': 'slow'},
+                {'route': 'Business 40', 'time': '35 min', 'status': 'heavy'}
+            ]
+            
+            # Calculate sun position for arc (mock calculation)
+            sun_position = 35  # percentage across arc
+            
+            # Create upcoming events for ticker
+            upcoming_events = [
+                {'date': 'Jul 4', 'summary': 'Independence Day'},
+                {'date': 'Jul 15', 'summary': 'Company All-Hands Meeting'},
+                {'date': 'Jul 20', 'summary': 'Team Building Retreat'},
+                {'date': 'Jul 28', 'summary': 'Q3 Planning Workshop'}
+            ]
+            
+            # Add UV level text
+            uv_level = 'High' if weather and weather.get('uv_index', 6) > 5 else 'Moderate'
+            
+            # Generate calendar month days (simple mock for now)
+            month_days = []
+            import calendar as cal
+            month_cal = cal.monthcalendar(now.year, now.month)
+            
+            for week in month_cal:
+                for day in week:
+                    if day == 0:
+                        continue  # Skip empty days
+                    month_days.append({
+                        'number': day,
+                        'is_today': day == now.day,
+                        'is_other_month': False
+                    })
 
             # Prepare template data
             template_data = {
@@ -533,8 +572,16 @@ class DashboardGenerator:
                 'current_month': current_month,
                 'current_year': current_year,
                 'week_start_date': week_start_date,
+                'week_number': week_number,
                 'last_updated': now.strftime('%H:%M:%S'),
-                'config': self.config.get('display', {})
+                'config': self.config.get('display', {}),
+                # v2 template specific data
+                'air_quality': air_quality,
+                'traffic': traffic,
+                'sun_position': sun_position,
+                'upcoming_events': upcoming_events,
+                'uv_level': uv_level,
+                'month_days': month_days
             }
 
             # Render template
