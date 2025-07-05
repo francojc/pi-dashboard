@@ -69,6 +69,7 @@ sudo raspi-config
 ```
 
 **Optional `raspi-config` settings:**
+
 - **System Options** → **Boot / Auto Login** → **Console Autologin**
 - **Interface Options** → **SSH** → **Enable** 
 - **Advanced Options** → **Expand Filesystem**
@@ -127,7 +128,7 @@ chmod +x install.sh
 ./install.sh
 
 # Or specify custom user and GitHub username
-./install.sh -u myuser -g francojc
+./install.sh -u myuser -g githubuser
 
 # See all options
 ./install.sh -h
