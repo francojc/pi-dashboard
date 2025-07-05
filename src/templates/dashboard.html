@@ -209,7 +209,7 @@ body {
   min-height: 0;
 }
 
-.left-column {
+.left-column, .right-column {
   display: flex;
   flex-direction: column;
   gap: var(--grid-gap);
@@ -720,8 +720,108 @@ body {
 
         <!-- Main Content Grid -->
         <div class="content-grid">
-            <!-- Left Column -->
+            <!-- Left Column - Calendar Card -->
             <div class="left-column">
+                <div class="card calendar-card">
+                    <h2 class="card-title">{{ current_month | default('July') }} {{ current_year | default('2025') }}</h2>
+
+                    <div class="calendar-header-info">
+                        <div class="month-year">{{ week_start_date | default('Independence Day Weekend') }}</div>
+                        <div class="week-info">Week {{ week_number | default('27') }}</div>
+                    </div>
+
+                    <!-- Mini Calendar Grid -->
+                    <div class="mini-calendar">
+                        <!-- Day headers -->
+                        {% for day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'] %}
+                        <div class="mini-day header">{{ day }}</div>
+                        {% endfor %}
+
+                        <!-- Calendar days - using fallback for now -->
+                        {% if month_days and month_days|length > 0 %}
+                            {% for day in month_days %}
+                            <div class="mini-day {% if day.is_today %}today{% endif %} {% if day.is_other_month %}other-month{% endif %}">
+                                {{ day.number }}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Fallback calendar for July 2025 -->
+                            <div class="mini-day other-month">29</div>
+                            <div class="mini-day other-month">30</div>
+                            <div class="mini-day">1</div>
+                            <div class="mini-day">2</div>
+                            <div class="mini-day">3</div>
+                            <div class="mini-day today">4</div>
+                            <div class="mini-day">5</div>
+                            <div class="mini-day">6</div>
+                            <div class="mini-day">7</div>
+                            <div class="mini-day">8</div>
+                            <div class="mini-day">9</div>
+                            <div class="mini-day">10</div>
+                            <div class="mini-day">11</div>
+                            <div class="mini-day">12</div>
+                            <div class="mini-day">13</div>
+                            <div class="mini-day">14</div>
+                            <div class="mini-day">15</div>
+                            <div class="mini-day">16</div>
+                            <div class="mini-day">17</div>
+                            <div class="mini-day">18</div>
+                            <div class="mini-day">19</div>
+                            <div class="mini-day">20</div>
+                            <div class="mini-day">21</div>
+                            <div class="mini-day">22</div>
+                            <div class="mini-day">23</div>
+                            <div class="mini-day">24</div>
+                            <div class="mini-day">25</div>
+                            <div class="mini-day">26</div>
+                            <div class="mini-day">27</div>
+                            <div class="mini-day">28</div>
+                            <div class="mini-day">29</div>
+                            <div class="mini-day">30</div>
+                            <div class="mini-day">31</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Today's Events -->
+                    <div class="events-list">
+                        {% if events and events|length > 0 %}
+                            {% for event in events %}
+                            <div class="event-item {% if event.start == 'All Day' %}all-day-event{% endif %}">
+                                <div class="event-time-col">
+                                    {% if event.start == 'All Day' %}
+                                        All Day
+                                    {% else %}
+                                        {{ event.start }}
+                                    {% endif %}
+                                </div>
+                                <div class="event-title">{{ event.summary }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Fallback events -->
+                            <div class="event-item all-day-event">
+                                <div class="event-time-col">All Day</div>
+                                <div class="event-title">Independence Day</div>
+                            </div>
+                            <div class="event-item">
+                                <div class="event-time-col">9:00 AM</div>
+                                <div class="event-title">Team Standup Meeting</div>
+                            </div>
+                            <div class="event-item">
+                                <div class="event-time-col">2:00 PM</div>
+                                <div class="event-title">Client Strategy Review</div>
+                            </div>
+                            <div class="event-item">
+                                <div class="event-time-col">4:00 PM</div>
+                                <div class="event-title">Q3 Project Planning</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Weather Related Cards -->
+            <div class="right-column">
                 <!-- 5-Day Forecast Card -->
                 <div class="card forecast-card">
                     <h2 class="card-title">5-Day Outlook</h2>
@@ -873,104 +973,6 @@ body {
                             {% endif %}
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Right Column - Calendar Card -->
-            <div class="card calendar-card">
-                <h2 class="card-title">{{ current_month | default('July') }} {{ current_year | default('2025') }}</h2>
-
-                <div class="calendar-header-info">
-                    <div class="month-year">{{ week_start_date | default('Independence Day Weekend') }}</div>
-                    <div class="week-info">Week {{ week_number | default('27') }}</div>
-                </div>
-
-                <!-- Mini Calendar Grid -->
-                <div class="mini-calendar">
-                    <!-- Day headers -->
-                    {% for day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'] %}
-                    <div class="mini-day header">{{ day }}</div>
-                    {% endfor %}
-
-                    <!-- Calendar days - using fallback for now -->
-                    {% if month_days and month_days|length > 0 %}
-                        {% for day in month_days %}
-                        <div class="mini-day {% if day.is_today %}today{% endif %} {% if day.is_other_month %}other-month{% endif %}">
-                            {{ day.number }}
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <!-- Fallback calendar for July 2025 -->
-                        <div class="mini-day other-month">29</div>
-                        <div class="mini-day other-month">30</div>
-                        <div class="mini-day">1</div>
-                        <div class="mini-day">2</div>
-                        <div class="mini-day">3</div>
-                        <div class="mini-day today">4</div>
-                        <div class="mini-day">5</div>
-                        <div class="mini-day">6</div>
-                        <div class="mini-day">7</div>
-                        <div class="mini-day">8</div>
-                        <div class="mini-day">9</div>
-                        <div class="mini-day">10</div>
-                        <div class="mini-day">11</div>
-                        <div class="mini-day">12</div>
-                        <div class="mini-day">13</div>
-                        <div class="mini-day">14</div>
-                        <div class="mini-day">15</div>
-                        <div class="mini-day">16</div>
-                        <div class="mini-day">17</div>
-                        <div class="mini-day">18</div>
-                        <div class="mini-day">19</div>
-                        <div class="mini-day">20</div>
-                        <div class="mini-day">21</div>
-                        <div class="mini-day">22</div>
-                        <div class="mini-day">23</div>
-                        <div class="mini-day">24</div>
-                        <div class="mini-day">25</div>
-                        <div class="mini-day">26</div>
-                        <div class="mini-day">27</div>
-                        <div class="mini-day">28</div>
-                        <div class="mini-day">29</div>
-                        <div class="mini-day">30</div>
-                        <div class="mini-day">31</div>
-                    {% endif %}
-                </div>
-
-                <!-- Today's Events -->
-                <div class="events-list">
-                    {% if events and events|length > 0 %}
-                        {% for event in events %}
-                        <div class="event-item {% if event.start == 'All Day' %}all-day-event{% endif %}">
-                            <div class="event-time-col">
-                                {% if event.start == 'All Day' %}
-                                    All Day
-                                {% else %}
-                                    {{ event.start }}
-                                {% endif %}
-                            </div>
-                            <div class="event-title">{{ event.summary }}</div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <!-- Fallback events -->
-                        <div class="event-item all-day-event">
-                            <div class="event-time-col">All Day</div>
-                            <div class="event-title">Independence Day</div>
-                        </div>
-                        <div class="event-item">
-                            <div class="event-time-col">9:00 AM</div>
-                            <div class="event-title">Team Standup Meeting</div>
-                        </div>
-                        <div class="event-item">
-                            <div class="event-time-col">2:00 PM</div>
-                            <div class="event-title">Client Strategy Review</div>
-                        </div>
-                        <div class="event-item">
-                            <div class="event-time-col">4:00 PM</div>
-                            <div class="event-title">Q3 Project Planning</div>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
