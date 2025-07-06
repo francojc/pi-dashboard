@@ -13,18 +13,18 @@
   --text-accent: #64ffda;
 
   /* Effects (lightweight) */
-  --glass-border: 1px solid rgba(100, 255, 218, 0.1);
-  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-border: 0.0625em solid rgba(100, 255, 218, 0.1);
+  --card-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
 
   /* Spacing System */
-  --spacing-xs: 8px;
-  --spacing-sm: 12px;
-  --spacing-md: 20px;
-  --spacing-lg: 25px;
+  --spacing-xs: 0.5em;
+  --spacing-sm: 0.75em;
+  --spacing-md: 1.25em;
+  --spacing-lg: 1.5625em;
 
   /* Layout */
-  --card-radius: 20px;
-  --grid-gap: 25px;
+  --card-radius: 1.25em;
+  --grid-gap: 1.5625em;
 
   /* Animation (with fallbacks) */
   --ticker-speed: 60s;
@@ -55,33 +55,33 @@ body {
   left: 0;
   right: 0;
   height: 2vh;
-  min-height: 30px;
+  min-height: 1.875em;
   background: linear-gradient(45deg, #ff6b6b, #ff8e53);
-  border-bottom: 2px solid rgba(255, 107, 107, 0.5);
+  border-bottom: 0.125em solid rgba(255, 107, 107, 0.5);
   display: flex;
   align-items: center;
   padding: 0 var(--spacing-lg);
   z-index: 1000;
   color: white;
   font-weight: 600;
-  box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 0.125em 0.625em rgba(255, 107, 107, 0.3);
 }
 
 .weather-alert-banner.severe {
   background: linear-gradient(45deg, #dc2626, #b91c1c);
   border-bottom-color: rgba(220, 38, 38, 0.5);
-  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4);
+  box-shadow: 0 0.125em 0.625em rgba(220, 38, 38, 0.4);
 }
 
 .weather-alert-banner.warning {
   background: linear-gradient(45deg, #f59e0b, #d97706);
   border-bottom-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0.125em 0.625em rgba(245, 158, 11, 0.3);
 }
 
 .alert-icon {
   font-size: 1.2rem;
-  margin-right: 10px;
+  margin-right: 0.625em;
   animation: pulse 2s infinite;
 }
 
@@ -94,14 +94,14 @@ body {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 0.9375em;
   overflow: hidden;
 }
 
 .alert-event {
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03125em;
 }
 
 .alert-time {
@@ -123,7 +123,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  max-width: 1920px;
+  max-width: 120em;
   margin: 0 auto;
 }
 
@@ -132,8 +132,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  margin-top: 15px; /* Minimal spacing - alert may overlap slightly */
+  margin-bottom: 0.625em;
+  margin-top: 0.9375em; /* Minimal spacing - alert may overlap slightly */
   flex-shrink: 0;
 }
 
@@ -145,7 +145,7 @@ body {
   font-size: 5.5rem;
   font-weight: 200;
   line-height: 0.8;
-  margin-bottom: 8px;
+  margin-bottom: 0.5em;
   background: linear-gradient(45deg, var(--primary), var(--primary-dark));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -162,7 +162,7 @@ body {
   text-align: right;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 1.25em;
 }
 
 .weather-main {
@@ -173,13 +173,13 @@ body {
   font-size: 4.5rem;
   font-weight: 200;
   line-height: 1;
-  margin-bottom: 5px;
+  margin-bottom: 0.3125em;
 }
 
 .weather-desc {
   font-size: 1.2rem;
   color: var(--text-secondary);
-  margin-bottom: 3px;
+  margin-bottom: 0.1875em;
 }
 
 .weather-meta {
@@ -189,7 +189,7 @@ body {
 
 .weather-icon-large {
   font-size: 5rem;
-  filter: drop-shadow(0 0 20px rgba(100, 255, 218, 0.3));
+  filter: drop-shadow(0 0 1.25em rgba(100, 255, 218, 0.3));
 }
 
 /* Content Grid */
@@ -236,16 +236,16 @@ body {
 .forecast-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75em;
 }
 
 .forecast-item {
   display: grid;
-  grid-template-columns: 80px 40px 1fr 80px;
+  grid-template-columns: 5em 2.5em 1fr 5em;
   align-items: center;
-  gap: 15px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(100, 255, 218, 0.1);
+  gap: 0.9375em;
+  padding: 0.75em 0;
+  border-bottom: 0.0625em solid rgba(100, 255, 218, 0.1);
 }
 
 .forecast-item:last-child {
@@ -258,8 +258,8 @@ body {
 }
 
 .forecast-icon-small {
-  width: 32px;
-  height: 32px;
+  width: 2em;
+  height: 2em;
 }
 
 .forecast-desc {
@@ -278,7 +278,7 @@ body {
 
 .forecast-low {
   color: var(--text-secondary);
-  margin-left: 8px;
+  margin-left: 0.5em;
 }
 
 /* Local Info Card */
@@ -289,9 +289,9 @@ body {
 
 .sun-arc-container {
   position: relative;
-  height: 120px;
+  height: 7.5em;
   background: linear-gradient(to bottom, rgba(135, 206, 250, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%);
-  border-radius: 15px;
+  border-radius: 0.9375em;
   padding: var(--spacing-md);
   margin-bottom: var(--spacing-md);
   overflow: hidden;
@@ -300,8 +300,8 @@ body {
 .sun-arc {
   position: relative;
   width: 100%;
-  height: 60px;
-  margin-bottom: 15px;
+  height: 3.75em;
+  margin-bottom: 0.9375em;
 }
 
 .arc-path {
@@ -309,35 +309,35 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 3.75em;
 }
 
 .arc-line {
   stroke: url(#arcGradient);
-  stroke-width: 6;
+  stroke-width: 0.375em;
   fill: none;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 0.125em 0.25em rgba(0, 0, 0, 0.3));
 }
 
 .arc-shadow {
   stroke: rgba(0, 0, 0, 0.4);
-  stroke-width: 8;
+  stroke-width: 0.5em;
   fill: none;
   opacity: 0.6;
 }
 
 .sun-position {
   position: absolute;
-  bottom: 32px;
+  bottom: 2em;
   font-size: 1.8rem;
-  filter: drop-shadow(0 0 10px rgba(255, 223, 0, 0.6));
+  filter: drop-shadow(0 0 0.625em rgba(255, 223, 0, 0.6));
   /* Simple animation for sun glow */
   animation: glow 3s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
-  from { filter: drop-shadow(0 0 10px rgba(255, 223, 0, 0.6)); }
-  to { filter: drop-shadow(0 0 20px rgba(255, 223, 0, 0.8)); }
+  from { filter: drop-shadow(0 0 0.625em rgba(255, 223, 0, 0.6)); }
+  to { filter: drop-shadow(0 0 1.25em rgba(255, 223, 0, 0.8)); }
 }
 
 /* Disable animations on low-performance devices */
@@ -358,7 +358,7 @@ body {
 .time-marker {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25em;
 }
 
 .current-time-marker {
@@ -371,7 +371,7 @@ body {
   display: flex;
   justify-content: space-around;
   gap: var(--spacing-md);
-  margin-top: 10px;
+  margin-top: 0.625em;
 }
 
 .metric-compact {
@@ -381,15 +381,15 @@ body {
 
 .metric-compact .metric-icon {
   font-size: 1.2rem;
-  margin-bottom: 4px;
+  margin-bottom: 0.25em;
 }
 
 .metric-compact .metric-label {
   font-size: 0.7rem;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 2px;
+  letter-spacing: 0.01875em;
+  margin-bottom: 0.125em;
 }
 
 .metric-compact .metric-value {
@@ -401,41 +401,41 @@ body {
 .metric-compact .metric-subtext {
   font-size: 0.65rem;
   color: var(--text-accent);
-  margin-top: 1px;
+  margin-top: 0.0625em;
 }
 
 /* Traffic Section */
 .commute-section {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(100, 255, 218, 0.1);
+  margin-top: 0.9375em;
+  padding-top: 0.9375em;
+  border-top: 0.0625em solid rgba(100, 255, 218, 0.1);
 }
 
 .commute-label {
   font-size: 0.9rem;
   color: var(--text-secondary);
-  margin-bottom: 10px;
+  margin-bottom: 0.625em;
   text-align: center;
 }
 
 .commute-routes {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 0.625em;
 }
 
 .route {
   flex: 1;
   text-align: center;
-  padding: 8px;
+  padding: 0.5em;
   background: rgba(100, 255, 218, 0.05);
-  border-radius: 8px;
+  border-radius: 0.5em;
 }
 
 .route-name {
   font-size: 0.75rem;
   color: var(--text-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 0.25em;
 }
 
 .route-time {
@@ -470,12 +470,34 @@ body {
   color: var(--text-accent);
 }
 
-/* Mini Calendar */
+/* Two-Month Calendar View - Side by Side */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25em;
+  margin-bottom: var(--spacing-md);
+}
+
+.month-container {
+  background: rgba(100, 255, 218, 0.02);
+  border-radius: 0.5em;
+  padding: 0.9375em;
+  border: 0.0625em solid rgba(100, 255, 218, 0.08);
+}
+
+.month-header {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-accent);
+  margin-bottom: 0.75em;
+}
+
 .mini-calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-  margin-bottom: var(--spacing-md);
+  gap: 0.1875em;
+  width: 100%;
 }
 
 .mini-day {
@@ -483,9 +505,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  border-radius: 6px;
-  background: rgba(100, 255, 218, 0.05);
+  font-size: 0.7rem;
+  border-radius: 0.25em;
+  background: rgba(100, 255, 218, 0.03);
+  min-height: 1.375em;
+  transition: background-color 0.2s ease;
+}
+
+.mini-day:hover {
+  background: rgba(100, 255, 218, 0.1);
 }
 
 .mini-day.header {
@@ -512,17 +540,17 @@ body {
 
 .event-item {
   display: flex;
-  gap: 12px;
-  padding: 10px 0;
-  border-left: 3px solid var(--text-accent);
-  padding-left: 12px;
-  margin-bottom: 12px;
+  gap: 0.75em;
+  padding: 0.625em 0;
+  border-left: 0.1875em solid var(--text-accent);
+  padding-left: 0.75em;
+  margin-bottom: 0.75em;
   background: rgba(100, 255, 218, 0.05);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 0.5em 0.5em 0;
 }
 
 .event-time-col {
-  min-width: 70px;
+  min-width: 4.375em;
   font-size: 0.85rem;
   color: var(--text-accent);
   font-weight: 500;
@@ -542,22 +570,119 @@ body {
   color: #f39c12;
 }
 
+/* Agenda View - Left Justified with Visual Hierarchy */
+.agenda-view {
+  margin-top: var(--spacing-md);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.agenda-day {
+  padding: 0.5em 0;
+  border-bottom: 0.0625em solid rgba(100, 255, 218, 0.08);
+}
+
+.agenda-day:last-child {
+  border-bottom: none;
+}
+
+.agenda-day.agenda-today {
+  background: rgba(100, 255, 218, 0.05);
+  border-radius: 0.375em;
+  padding: 0.625em 0.5em;
+  margin: 0 -0.5em;
+  border-left: 0.1875em solid var(--text-accent);
+}
+
+.agenda-date {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.25em;
+  border-bottom: 0.0625em solid rgba(100, 255, 218, 0.05);
+}
+
+.agenda-date-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-accent);
+  min-width: 3.125em;
+}
+
+.agenda-day-name {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.agenda-events {
+  margin-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.agenda-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75em;
+  padding: 0.25em 0;
+  font-size: 0.85rem;
+}
+
+.agenda-event-time {
+  min-width: 5.3125em;
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 600;
+  flex-shrink: 0;
+  line-height: 1.3;
+  background: rgba(100, 255, 218, 0.08);
+  padding: 0.125em 0.375em;
+  border-radius: 0.25em;
+  border-left: 0.125em solid var(--primary);
+}
+
+.agenda-event-title {
+  color: var(--text-primary);
+  line-height: 1.3;
+  flex: 1;
+  font-weight: 400;
+}
+
+.agenda-event.agenda-all-day .agenda-event-time {
+  color: #f39c12;
+  background: rgba(243, 156, 18, 0.1);
+  border-left-color: #f39c12;
+}
+
+.agenda-no-events {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-left: 0;
+  opacity: 0.7;
+}
+
 /* News Ticker Section */
 .news-section {
   background: rgba(15, 20, 25, 0.9);
-  border-radius: 15px;
-  padding: 20px;
-  border: 1px solid rgba(100, 255, 218, 0.1);
+  border-radius: 0.9375em;
+  padding: 1.25em;
+  border: 0.0625em solid rgba(100, 255, 218, 0.1);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 0.9375em;
 }
 
 .calendar-ticker {
-  border-top: 1px solid rgba(100, 255, 218, 0.1);
-  padding-top: 15px;
+  border-top: 0.0625em solid rgba(100, 255, 218, 0.1);
+  padding-top: 0.9375em;
 }
 
 .ticker-section {
@@ -567,15 +692,15 @@ body {
 
 .ticker-label {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 0.25em 0.75em;
   background: rgba(100, 255, 218, 0.15);
-  border-radius: 12px;
+  border-radius: 0.75em;
   font-size: 0.75rem;
   color: #64ffda;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 0.5em;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03125em;
 }
 
 .news-ticker-label {
@@ -615,13 +740,13 @@ body {
 
 .ticker-item {
   display: inline-block;
-  margin-right: 80px;
+  margin-right: 5em;
 }
 
 .news-tag, .calendar-event {
   color: var(--text-accent);
   font-weight: 600;
-  margin-right: 10px;
+  margin-right: 0.625em;
   font-size: 0.9rem;
 }
 
@@ -659,10 +784,10 @@ body {
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .card {
-    border: 2px solid var(--text-accent);
+    border: 0.125em solid var(--text-accent);
   }
 
   .ticker-label {
-    border: 1px solid currentColor;
+    border: 0.0625em solid currentColor;
   }
 }

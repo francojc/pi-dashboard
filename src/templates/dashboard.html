@@ -53,62 +53,107 @@
             <!-- Left Column - Calendar Card -->
             <div class="left-column">
                 <div class="card calendar-card">
-                    <h2 class="card-title">{{ current_month | default('July') }} {{ current_year | default('2025') }}</h2>
+                    <h2 class="card-title">Calendar</h2>
 
                     <div class="calendar-header-info">
                         <div class="week-info">Week {{ week_number | default('27') }}</div>
                     </div>
 
-                    <!-- Mini Calendar Grid -->
-                    <div class="mini-calendar">
-                        <!-- Day headers -->
-                        {% for day in ['M', 'T', 'W', 'T', 'F', 'S', 'S'] %}
-                        <div class="mini-day header">{{ day }}</div>
-                        {% endfor %}
-
-                        <!-- Calendar days - using fallback for now -->
-                        {% if month_days and month_days|length > 0 %}
-                            {% for day in month_days %}
-                            <div class="mini-day {% if day.is_today %}today{% endif %} {% if day.is_other_month %}other-month{% endif %}">
-                                {{ day.number }}
+                    <!-- Two-Month Calendar Grid -->
+                    <div class="calendar-grid">
+                        <!-- July 2025 -->
+                        <div class="month-container">
+                            <div class="month-header">July 2025</div>
+                            <div class="mini-calendar">
+                                <!-- Day headers -->
+                                {% for day in ['M', 'T', 'W', 'T', 'F', 'S', 'S'] %}
+                                <div class="mini-day header">{{ day }}</div>
+                                {% endfor %}
+                                <!-- July days -->
+                                <div class="mini-day other-month">30</div>
+                                <div class="mini-day">1</div>
+                                <div class="mini-day">2</div>
+                                <div class="mini-day">3</div>
+                                <div class="mini-day">4</div>
+                                <div class="mini-day">5</div>
+                                <div class="mini-day today">6</div>
+                                <div class="mini-day">7</div>
+                                <div class="mini-day">8</div>
+                                <div class="mini-day">9</div>
+                                <div class="mini-day">10</div>
+                                <div class="mini-day">11</div>
+                                <div class="mini-day">12</div>
+                                <div class="mini-day">13</div>
+                                <div class="mini-day">14</div>
+                                <div class="mini-day">15</div>
+                                <div class="mini-day">16</div>
+                                <div class="mini-day">17</div>
+                                <div class="mini-day">18</div>
+                                <div class="mini-day">19</div>
+                                <div class="mini-day">20</div>
+                                <div class="mini-day">21</div>
+                                <div class="mini-day">22</div>
+                                <div class="mini-day">23</div>
+                                <div class="mini-day">24</div>
+                                <div class="mini-day">25</div>
+                                <div class="mini-day">26</div>
+                                <div class="mini-day">27</div>
+                                <div class="mini-day">28</div>
+                                <div class="mini-day">29</div>
+                                <div class="mini-day">30</div>
+                                <div class="mini-day">31</div>
+                                <div class="mini-day other-month">1</div>
+                                <div class="mini-day other-month">2</div>
+                                <div class="mini-day other-month">3</div>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <!-- Fallback calendar for July 2025 -->
-                            <div class="mini-day other-month">29</div>
-                            <div class="mini-day other-month">30</div>
-                            <div class="mini-day">1</div>
-                            <div class="mini-day">2</div>
-                            <div class="mini-day">3</div>
-                            <div class="mini-day today">4</div>
-                            <div class="mini-day">5</div>
-                            <div class="mini-day">6</div>
-                            <div class="mini-day">7</div>
-                            <div class="mini-day">8</div>
-                            <div class="mini-day">9</div>
-                            <div class="mini-day">10</div>
-                            <div class="mini-day">11</div>
-                            <div class="mini-day">12</div>
-                            <div class="mini-day">13</div>
-                            <div class="mini-day">14</div>
-                            <div class="mini-day">15</div>
-                            <div class="mini-day">16</div>
-                            <div class="mini-day">17</div>
-                            <div class="mini-day">18</div>
-                            <div class="mini-day">19</div>
-                            <div class="mini-day">20</div>
-                            <div class="mini-day">21</div>
-                            <div class="mini-day">22</div>
-                            <div class="mini-day">23</div>
-                            <div class="mini-day">24</div>
-                            <div class="mini-day">25</div>
-                            <div class="mini-day">26</div>
-                            <div class="mini-day">27</div>
-                            <div class="mini-day">28</div>
-                            <div class="mini-day">29</div>
-                            <div class="mini-day">30</div>
-                            <div class="mini-day">31</div>
-                        {% endif %}
+                        </div>
+
+                        <!-- August 2025 -->
+                        <div class="month-container">
+                            <div class="month-header">August 2025</div>
+                            <div class="mini-calendar">
+                                <!-- Day headers -->
+                                {% for day in ['M', 'T', 'W', 'T', 'F', 'S', 'S'] %}
+                                <div class="mini-day header">{{ day }}</div>
+                                {% endfor %}
+                                <!-- August days -->
+                                <div class="mini-day other-month">28</div>
+                                <div class="mini-day other-month">29</div>
+                                <div class="mini-day other-month">30</div>
+                                <div class="mini-day other-month">31</div>
+                                <div class="mini-day">1</div>
+                                <div class="mini-day">2</div>
+                                <div class="mini-day">3</div>
+                                <div class="mini-day">4</div>
+                                <div class="mini-day">5</div>
+                                <div class="mini-day">6</div>
+                                <div class="mini-day">7</div>
+                                <div class="mini-day">8</div>
+                                <div class="mini-day">9</div>
+                                <div class="mini-day">10</div>
+                                <div class="mini-day">11</div>
+                                <div class="mini-day">12</div>
+                                <div class="mini-day">13</div>
+                                <div class="mini-day">14</div>
+                                <div class="mini-day">15</div>
+                                <div class="mini-day">16</div>
+                                <div class="mini-day">17</div>
+                                <div class="mini-day">18</div>
+                                <div class="mini-day">19</div>
+                                <div class="mini-day">20</div>
+                                <div class="mini-day">21</div>
+                                <div class="mini-day">22</div>
+                                <div class="mini-day">23</div>
+                                <div class="mini-day">24</div>
+                                <div class="mini-day">25</div>
+                                <div class="mini-day">26</div>
+                                <div class="mini-day">27</div>
+                                <div class="mini-day">28</div>
+                                <div class="mini-day">29</div>
+                                <div class="mini-day">30</div>
+                                <div class="mini-day">31</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 5-Day Agenda -->
@@ -125,10 +170,14 @@
                                         {% for event in day.events %}
                                         <div class="agenda-event {% if event.type == 'all_day' %}agenda-all-day{% endif %}">
                                             <div class="agenda-event-time">
-                                                {% if event.start == 'All Day' %}
+                                                {% if event.start == 'All Day' or event.type == 'all_day' %}
                                                     All Day
                                                 {% else %}
-                                                    {{ event.start }}
+                                                    {% if event.end and event.end != event.start %}
+                                                        {{ event.start }}-{{ event.end }}
+                                                    {% else %}
+                                                        {{ event.start }}
+                                                    {% endif %}
                                                 {% endif %}
                                             </div>
                                             <div class="agenda-event-title">{{ event.summary }}</div>
@@ -144,14 +193,10 @@
                             <!-- Fallback agenda -->
                             <div class="agenda-day agenda-today">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">07/05</div>
+                                    <div class="agenda-date-text">07/06</div>
                                     <div class="agenda-day-name">Today</div>
                                 </div>
                                 <div class="agenda-events">
-                                    <div class="agenda-event">
-                                        <div class="agenda-event-time">21:00</div>
-                                        <div class="agenda-event-title">Do laundry</div>
-                                    </div>
                                     <div class="agenda-event agenda-all-day">
                                         <div class="agenda-event-time">All Day</div>
                                         <div class="agenda-event-title">Monthly review</div>
@@ -160,23 +205,14 @@
                             </div>
                             <div class="agenda-day">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">07/06</div>
+                                    <div class="agenda-date-text">07/07</div>
                                     <div class="agenda-day-name">Tomorrow</div>
                                 </div>
                                 <div class="agenda-events">
                                     <div class="agenda-event">
-                                        <div class="agenda-event-time">10:00</div>
-                                        <div class="agenda-event-title">Team Meeting</div>
+                                        <div class="agenda-event-time">08:30-09:00</div>
+                                        <div class="agenda-event-title">NCSU orientation</div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="agenda-day">
-                                <div class="agenda-date">
-                                    <div class="agenda-date-text">07/07</div>
-                                    <div class="agenda-day-name">Monday</div>
-                                </div>
-                                <div class="agenda-events">
-                                    <div class="agenda-no-events">No events</div>
                                 </div>
                             </div>
                             <div class="agenda-day">
@@ -185,20 +221,22 @@
                                     <div class="agenda-day-name">Tuesday</div>
                                 </div>
                                 <div class="agenda-events">
-                                    <div class="agenda-event">
-                                        <div class="agenda-event-time">14:00</div>
-                                        <div class="agenda-event-title">Client Call</div>
-                                    </div>
-                                    <div class="agenda-event agenda-all-day">
-                                        <div class="agenda-event-time">All Day</div>
-                                        <div class="agenda-event-title">Deadline: Project X</div>
-                                    </div>
+                                    <div class="agenda-no-events">No events</div>
                                 </div>
                             </div>
                             <div class="agenda-day">
                                 <div class="agenda-date">
                                     <div class="agenda-date-text">07/09</div>
                                     <div class="agenda-day-name">Wednesday</div>
+                                </div>
+                                <div class="agenda-events">
+                                    <div class="agenda-no-events">No events</div>
+                                </div>
+                            </div>
+                            <div class="agenda-day">
+                                <div class="agenda-date">
+                                    <div class="agenda-date-text">07/10</div>
+                                    <div class="agenda-day-name">Thursday</div>
                                 </div>
                                 <div class="agenda-events">
                                     <div class="agenda-no-events">No events</div>
