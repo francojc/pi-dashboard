@@ -89,15 +89,16 @@ class GoogleCalendarService:
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
                         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                        "redirect_uris": ["http://localhost:8081"],
+                        "redirect_uris": [f"http://localhost:{os.getenv('PORT', '8081')}"],
                     }
                 }
 
                 try:
                     flow = InstalledAppFlow.from_client_config(client_config, self.SCOPES)
-                    # Use fixed port 8080 to match redirect URI
+                    # Use port from environment variable
+                    port = int(os.getenv('PORT', '8081'))
                     logger.info("Starting OAuth flow - please complete authorization in your browser")
-                    self.credentials = flow.run_local_server(port=8081, open_browser=True)
+                    self.credentials = flow.run_local_server(port=port, open_browser=True)
                     logger.info("OAuth flow completed successfully")
 
                     # Save credentials for next run
@@ -106,7 +107,8 @@ class GoogleCalendarService:
 
                 except Exception as e:
                     logger.error(f"OAuth flow failed: {e}")
-                    logger.error("Make sure http://localhost:8081 is registered as a redirect URI in Google Cloud Console")
+                    port = os.getenv('PORT', '8081')
+                    logger.error(f"Make sure http://localhost:{port} is registered as a redirect URI in Google Cloud Console")
                     logger.error(f"OAuth client config: client_id ends with ...{client_id[-10:] if client_id and len(client_id) > 10 else 'N/A'}")
                     raise
 
@@ -380,13 +382,23 @@ class DashboardGenerator:
         try:
             with open(config_path, 'r') as f:
                 config = json.load(f)
-            # Override with environment variables if present
-            if os.getenv('OPENWEATHER_API_KEY'):
-                config['weather']['api_key'] = os.getenv('OPENWEATHER_API_KEY')
-            return config
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
-            return {}
+            config = {}
+        
+        # Ensure weather config exists
+        if 'weather' not in config:
+            config['weather'] = {}
+            
+        # Override with environment variables if present
+        if os.getenv('OPENWEATHER_API_KEY'):
+            config['weather']['api_key'] = os.getenv('OPENWEATHER_API_KEY')
+        if os.getenv('WEATHER_LOCATION'):
+            config['weather']['location'] = os.getenv('WEATHER_LOCATION')
+        if os.getenv('WEATHER_UNITS'):
+            config['weather']['units'] = os.getenv('WEATHER_UNITS')
+            
+        return config
 
     def _calculate_mock_uv_index(self) -> int:
         """Calculate realistic UV index based on time of day and season"""
@@ -468,7 +480,7 @@ class DashboardGenerator:
                 return None
 
             # First get coordinates using geocoding API
-            location = config.get('location', 'Winston-Salem,NC')
+            location = config.get('location', os.getenv('WEATHER_LOCATION', 'Winston-Salem,NC,US'))
             geocoding_url = "https://api.openweathermap.org/geo/1.0/direct"
             geo_params = {
                 'q': location,
@@ -492,7 +504,7 @@ class DashboardGenerator:
                 'lat': lat,
                 'lon': lon,
                 'appid': config['api_key'],
-                'units': config.get('units', 'imperial'),
+                'units': config.get('units', os.getenv('WEATHER_UNITS', 'imperial')),
                 'exclude': 'minutely,hourly'  # Only get current, daily, and alerts
             }
 
@@ -503,7 +515,8 @@ class DashboardGenerator:
             current = data['current']
 
             # Convert wind speed based on units
-            if config.get('units') == 'imperial':
+            units = config.get('units', os.getenv('WEATHER_UNITS', 'imperial'))
+            if units == 'imperial':
                 wind_speed = round(current['wind_speed'], 1)  # mph
                 wind_unit = 'mph'
             else:
@@ -552,9 +565,9 @@ class DashboardGenerator:
 
             url = "https://api.openweathermap.org/data/2.5/weather"
             params = {
-                'q': config.get('location', 'Winston-Salem,NC'),
+                'q': config.get('location', os.getenv('WEATHER_LOCATION', 'Winston-Salem,NC,US')),
                 'appid': config['api_key'],
-                'units': config.get('units', 'imperial')
+                'units': config.get('units', os.getenv('WEATHER_UNITS', 'imperial'))
             }
 
             response = requests.get(url, params=params, timeout=10)
@@ -562,7 +575,8 @@ class DashboardGenerator:
             data = response.json()
 
             # Convert wind speed based on units
-            if config.get('units') == 'imperial':
+            units = config.get('units', os.getenv('WEATHER_UNITS', 'imperial'))
+            if units == 'imperial':
                 wind_speed = round(data['wind']['speed'], 1)  # mph
                 wind_unit = 'mph'
             else:
@@ -595,7 +609,7 @@ class DashboardGenerator:
                 return self._get_mock_air_quality()
 
             # Use same location as weather for simplicity
-            location = config.get('location', 'Winston-Salem,NC,US')
+            location = config.get('location', os.getenv('WEATHER_LOCATION', 'Winston-Salem,NC,US'))
             
             # First, get coordinates for the location using geocoding
             geocoding_url = "https://api.openweathermap.org/geo/1.0/direct"
@@ -772,9 +786,9 @@ class DashboardGenerator:
 
             url = "https://api.openweathermap.org/data/2.5/forecast"
             params = {
-                'q': config.get('location', 'Winston-Salem,NC'),
+                'q': config.get('location', os.getenv('WEATHER_LOCATION', 'Winston-Salem,NC,US')),
                 'appid': config['api_key'],
-                'units': config.get('units', 'imperial')
+                'units': config.get('units', os.getenv('WEATHER_UNITS', 'imperial'))
             }
 
             response = requests.get(url, params=params, timeout=10)

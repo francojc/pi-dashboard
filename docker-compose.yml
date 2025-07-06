@@ -12,6 +12,7 @@ services:
       - GOOGLE_CALENDAR_CLIENT_SECRET=${GOOGLE_CALENDAR_CLIENT_SECRET:-}
       - WEATHER_LOCATION=${WEATHER_LOCATION:-Winston-Salem,NC,US}
       - WEATHER_UNITS=${WEATHER_UNITS:-imperial}
+      - PORT=${PORT:-8080}
       - PYTHONUNBUFFERED=1
     volumes:
       - ./src:/app/src:ro
