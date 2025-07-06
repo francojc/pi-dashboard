@@ -185,7 +185,7 @@ class GoogleCalendarService:
             now = datetime.now()
             monday = now - timedelta(days=now.weekday())
             monday = monday.replace(hour=0, minute=0, second=0, microsecond=0)
-            
+
             # Calculate Sunday (end of week)
             sunday = monday + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
@@ -222,14 +222,14 @@ class GoogleCalendarService:
             for event in events:
                 start = event['start'].get('dateTime', event['start'].get('date'))
                 end = event['end'].get('dateTime', event['end'].get('date'))
-                
+
                 # Determine event date
                 if 'T' in start:
                     # Timed event
                     start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
                     end_dt = datetime.fromisoformat(end.replace('Z', '+00:00'))
                     event_date = start_dt.date()
-                    
+
                     event_data = {
                         'summary': event.get('summary', 'Untitled Event'),
                         'start': start_dt.strftime('%H:%M'),
@@ -237,20 +237,20 @@ class GoogleCalendarService:
                         'location': event.get('location', ''),
                         'type': 'timed'
                     }
-                    
+
                     date_key = event_date.strftime('%Y-%m-%d')
                     if date_key in week_events:
                         week_events[date_key]['timed'].append(event_data)
                 else:
                     # All-day event
                     event_date = datetime.fromisoformat(start).date()
-                    
+
                     event_data = {
                         'summary': event.get('summary', 'Untitled Event'),
                         'location': event.get('location', ''),
                         'type': 'all_day'
                     }
-                    
+
                     date_key = event_date.strftime('%Y-%m-%d')
                     if date_key in week_events:
                         week_events[date_key]['all_day'].append(event_data)
@@ -284,19 +284,19 @@ class GoogleCalendarService:
 
             events = events_result.get('items', [])
             agenda = []
-            
+
             # Initialize agenda structure for next 5 days
             for i in range(5):
                 day = datetime.now() + timedelta(days=i)
                 day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day.weekday()]
-                
+
                 if i == 0:
                     display_name = 'Today'
                 elif i == 1:
                     display_name = 'Tomorrow'
                 else:
                     display_name = day_name
-                
+
                 agenda_day = {
                     'date': day.strftime('%m/%d'),
                     'day_name': display_name,
@@ -310,14 +310,14 @@ class GoogleCalendarService:
             for event in events:
                 start = event['start'].get('dateTime', event['start'].get('date'))
                 end = event['end'].get('dateTime', event['end'].get('date'))
-                
+
                 # Determine event date
                 if 'T' in start:
                     # Timed event
                     start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
                     end_dt = datetime.fromisoformat(end.replace('Z', '+00:00'))
                     event_date = start_dt.date()
-                    
+
                     event_data = {
                         'summary': event.get('summary', 'Untitled Event'),
                         'start': start_dt.strftime('%H:%M'),
@@ -327,18 +327,18 @@ class GoogleCalendarService:
                 else:
                     # All-day event
                     event_date = datetime.fromisoformat(start).date()
-                    
+
                     event_data = {
                         'summary': event.get('summary', 'Untitled Event'),
                         'start': 'All Day',
                         'end': '',
                         'type': 'all_day'
                     }
-                
+
                 # Find the matching agenda day
                 today = datetime.now().date()
                 days_ahead = (event_date - today).days
-                
+
                 if 0 <= days_ahead < 5:
                     agenda[days_ahead]['events'].append(event_data)
 
@@ -357,12 +357,12 @@ class DashboardGenerator:
         # Set up paths relative to script location for container compatibility
         script_dir = Path(__file__).resolve().parent
         project_root = script_dir.parent
-        
+
         if config_path is None:
             config_path = script_dir / "config" / "config.json"
         else:
             config_path = Path(config_path)
-            
+
         self.config = self._load_config(config_path)
         self.template_dir = script_dir / "templates"
         self.static_dir = script_dir / "static"
@@ -385,11 +385,11 @@ class DashboardGenerator:
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
             config = {}
-        
+
         # Ensure weather config exists
         if 'weather' not in config:
             config['weather'] = {}
-            
+
         # Override with environment variables if present
         if os.getenv('OPENWEATHER_API_KEY'):
             config['weather']['api_key'] = os.getenv('OPENWEATHER_API_KEY')
@@ -397,7 +397,7 @@ class DashboardGenerator:
             config['weather']['location'] = os.getenv('WEATHER_LOCATION')
         if os.getenv('WEATHER_UNITS'):
             config['weather']['units'] = os.getenv('WEATHER_UNITS')
-            
+
         return config
 
     def _calculate_mock_uv_index(self) -> int:
@@ -406,7 +406,7 @@ class DashboardGenerator:
             now = datetime.now()
             hour = now.hour
             month = now.month
-            
+
             # Base UV for summer months (higher in June-August)
             if month in [6, 7, 8]:  # Summer
                 base_uv = 8
@@ -414,7 +414,7 @@ class DashboardGenerator:
                 base_uv = 6
             else:  # Winter
                 base_uv = 3
-                
+
             # Time-based adjustment (peak at solar noon ~1PM)
             if 10 <= hour <= 16:  # Peak sun hours
                 time_multiplier = 1.0
@@ -424,10 +424,10 @@ class DashboardGenerator:
                 time_multiplier = 0.6
             else:  # Early morning/night
                 time_multiplier = 0.1
-                
+
             uv_index = int(base_uv * time_multiplier)
             return max(0, min(11, uv_index))  # Clamp to valid UV range
-            
+
         except Exception:
             return 6  # Safe fallback
 
@@ -436,15 +436,15 @@ class DashboardGenerator:
         try:
             now = datetime.now()
             current_time = now.hour * 60 + now.minute  # Current time in minutes
-            
+
             if weather and 'sunrise' in weather and 'sunset' in weather:
-                # Parse sunrise and sunset times 
+                # Parse sunrise and sunset times
                 sunrise_parts = weather['sunrise'].split(':')
                 sunset_parts = weather['sunset'].split(':')
-                
+
                 sunrise_minutes = int(sunrise_parts[0]) * 60 + int(sunrise_parts[1])
                 sunset_minutes = int(sunset_parts[0]) * 60 + int(sunset_parts[1])
-                
+
                 # Calculate position percentage
                 if current_time < sunrise_minutes:
                     # Before sunrise - sun is "below" the arc (0%)
@@ -466,7 +466,7 @@ class DashboardGenerator:
                     return int(progress * 100)
                 else:
                     return 0 if now.hour < 6 else 100
-                    
+
         except Exception as e:
             logger.debug(f"Sun position calculation failed: {e}")
             return 35  # Safe middle position
@@ -610,7 +610,7 @@ class DashboardGenerator:
 
             # Use same location as weather for simplicity
             location = config.get('location', os.getenv('WEATHER_LOCATION', 'Winston-Salem,NC,US'))
-            
+
             # First, get coordinates for the location using geocoding
             geocoding_url = "https://api.openweathermap.org/geo/1.0/direct"
             geo_params = {
@@ -618,17 +618,17 @@ class DashboardGenerator:
                 'appid': config['api_key'],
                 'limit': 1
             }
-            
+
             geo_response = requests.get(geocoding_url, params=geo_params, timeout=10)
             geo_response.raise_for_status()
             geo_data = geo_response.json()
-            
+
             if not geo_data:
                 logger.warning(f"Could not find coordinates for location: {location}")
                 return self._get_mock_air_quality()
-            
+
             lat, lon = geo_data[0]['lat'], geo_data[0]['lon']
-            
+
             # Now get air quality data using coordinates
             aqi_url = "https://api.openweathermap.org/data/2.5/air_pollution"
             aqi_params = {
@@ -636,40 +636,40 @@ class DashboardGenerator:
                 'lon': lon,
                 'appid': config['api_key']
             }
-            
+
             aqi_response = requests.get(aqi_url, params=aqi_params, timeout=10)
             aqi_response.raise_for_status()
             aqi_data = aqi_response.json()
-            
+
             # Extract air quality index and convert to status
             aqi_value = aqi_data['list'][0]['main']['aqi']
             aqi_status_map = {
                 1: 'Good',
-                2: 'Fair', 
+                2: 'Fair',
                 3: 'Moderate',
                 4: 'Poor',
                 5: 'Very Poor'
             }
-            
+
             return {
                 'status': aqi_status_map.get(aqi_value, 'Unknown'),
                 'aqi': aqi_value * 50  # Convert OpenWeather 1-5 scale to rough US AQI equivalent
             }
-            
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Air quality fetch failed: {e}")
             return self._get_mock_air_quality()
         except Exception as e:
             logger.error(f"Unexpected error fetching air quality: {e}")
             return self._get_mock_air_quality()
-    
+
     def _get_mock_air_quality(self) -> Dict:
         """Generate realistic mock air quality data based on time and season"""
         try:
             now = datetime.now()
             hour = now.hour
             month = now.month
-            
+
             # Base AQI varies by season and time
             if month in [6, 7, 8]:  # Summer - higher pollution due to heat
                 base_aqi = 65
@@ -677,7 +677,7 @@ class DashboardGenerator:
                 base_aqi = 55
             else:  # Spring/Fall - generally better
                 base_aqi = 40
-                
+
             # Time-based variation (rush hours have higher pollution)
             if 7 <= hour <= 9 or 17 <= hour <= 19:  # Rush hours
                 time_multiplier = 1.3
@@ -685,9 +685,9 @@ class DashboardGenerator:
                 time_multiplier = 1.1
             else:  # Night/early morning
                 time_multiplier = 0.8
-                
+
             final_aqi = int(base_aqi * time_multiplier)
-            
+
             # Determine status based on US AQI scale
             if final_aqi <= 50:
                 status = 'Good'
@@ -697,9 +697,9 @@ class DashboardGenerator:
                 status = 'Unhealthy for Sensitive Groups'
             else:
                 status = 'Unhealthy'
-                
+
             return {'status': status, 'aqi': final_aqi}
-            
+
         except Exception:
             return {'status': 'Good', 'aqi': 45}  # Safe fallback
 
@@ -709,14 +709,14 @@ class DashboardGenerator:
             now = datetime.now()
             hour = now.hour
             weekday = now.weekday()  # 0=Monday, 6=Sunday
-            
+
             # Base travel times for different routes (in minutes)
             routes = [
                 {'name': 'I-40 East', 'base_time': 18},
-                {'name': 'US-52 North', 'base_time': 22}, 
+                {'name': 'US-52 North', 'base_time': 22},
                 {'name': 'Business 40', 'base_time': 28}
             ]
-            
+
             # Traffic multipliers based on time and day
             if weekday in [5, 6]:  # Weekend
                 if 10 <= hour <= 16:  # Weekend afternoon shopping/activity
@@ -736,12 +736,12 @@ class DashboardGenerator:
                     time_multiplier = 0.7
                 else:  # Regular hours
                     time_multiplier = 1.0
-            
+
             traffic_list = []
             for route in routes:
                 # Calculate actual time with multiplier and some route-specific variation
                 actual_time = int(route['base_time'] * time_multiplier)
-                
+
                 # Add route-specific adjustments
                 if 'I-40' in route['name']:
                     # Highway, less affected by local traffic but weather sensitive
@@ -749,7 +749,7 @@ class DashboardGenerator:
                 elif 'Business' in route['name']:
                     # Local roads, more affected by traffic lights and local congestion
                     actual_time = int(actual_time * 1.1)
-                
+
                 # Determine status based on how much longer than base time
                 time_ratio = actual_time / route['base_time']
                 if time_ratio <= 1.1:
@@ -758,15 +758,15 @@ class DashboardGenerator:
                     status = 'slow'
                 else:
                     status = 'heavy'
-                
+
                 traffic_list.append({
                     'route': route['name'],
                     'time': f"{actual_time} min",
                     'status': status
                 })
-            
+
             return traffic_list
-            
+
         except Exception as e:
             logger.debug(f"Traffic generation failed: {e}")
             # Safe fallback
@@ -912,7 +912,7 @@ class DashboardGenerator:
             try:
                 calendar_id = calendar_config.get('calendar_id', 'primary')
                 agenda_events = self.calendar_service.get_agenda_events(calendar_id)
-                logger.info(f"Fetched agenda events from Google Calendar")
+                logger.info("Fetched agenda events from Google Calendar")
                 return agenda_events
             except Exception as e:
                 logger.error(f"Failed to fetch Google Calendar agenda events: {e}")
@@ -921,11 +921,11 @@ class DashboardGenerator:
         logger.info("Using mock agenda data")
         now = datetime.now()
         agenda = []
-        
+
         for i in range(5):
             day = now + timedelta(days=i)
             day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day.weekday()]
-            
+
             # Today gets a special name
             if i == 0:
                 display_name = 'Today'
@@ -933,7 +933,7 @@ class DashboardGenerator:
                 display_name = 'Tomorrow'
             else:
                 display_name = day_name
-            
+
             agenda_day = {
                 'date': day.strftime('%m/%d'),
                 'day_name': display_name,
@@ -941,7 +941,7 @@ class DashboardGenerator:
                 'is_today': i == 0,
                 'events': []
             }
-            
+
             # Add mock events for some days
             if i == 0:  # Today
                 agenda_day['events'] = [
@@ -958,9 +958,9 @@ class DashboardGenerator:
                     {'summary': 'Deadline: Project X', 'start': 'All Day', 'end': '', 'type': 'all_day'}
                 ]
             # Days 2 and 4 will have no events to test empty day display
-            
+
             agenda.append(agenda_day)
-        
+
         return agenda
 
     def fetch_week_calendar_events(self) -> Dict[str, Dict]:
@@ -972,7 +972,7 @@ class DashboardGenerator:
             try:
                 calendar_id = calendar_config.get('calendar_id', 'primary')
                 week_events = self.calendar_service.get_week_events(calendar_id)
-                logger.info(f"Fetched week events from Google Calendar")
+                logger.info("Fetched week events from Google Calendar")
                 return week_events
             except Exception as e:
                 logger.error(f"Failed to fetch Google Calendar week events: {e}")
@@ -982,7 +982,7 @@ class DashboardGenerator:
         logger.info("Using mock week calendar data")
         now = datetime.now()
         monday = now - timedelta(days=now.weekday())
-        
+
         mock_week_events = {}
         for i in range(7):
             day = monday + timedelta(days=i)
@@ -1000,7 +1000,7 @@ class DashboardGenerator:
         today_key = now.strftime('%Y-%m-%d')
         tomorrow = now + timedelta(days=1)
         tomorrow_key = tomorrow.strftime('%Y-%m-%d')
-        
+
         if today_key in mock_week_events:
             mock_week_events[today_key]['timed'].extend([
                 {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30', 'type': 'timed'},
@@ -1009,7 +1009,7 @@ class DashboardGenerator:
             mock_week_events[today_key]['all_day'].append(
                 {'summary': 'Holiday', 'type': 'all_day'}
             )
-        
+
         if tomorrow_key in mock_week_events:
             mock_week_events[tomorrow_key]['timed'].append(
                 {'summary': 'Client Call', 'start': '16:00', 'end': '17:00', 'type': 'timed'}
@@ -1020,18 +1020,18 @@ class DashboardGenerator:
     def _format_events_for_ticker(self, events: List[Dict]) -> List[Dict]:
         """Format calendar events for the ticker display"""
         ticker_events = []
-        
+
         try:
             # Get current date for date formatting
             now = datetime.now()
-            
+
             for event in events:
                 if not event.get('summary'):
                     continue
-                    
+
                 # Create a simple date format for the ticker
                 event_date = now.strftime('%b %d')
-                
+
                 # Try to parse the start time if it's available
                 start_time = event.get('start', '')
                 if start_time and start_time != 'All Day' and ':' in start_time:
@@ -1040,16 +1040,16 @@ class DashboardGenerator:
                 elif start_time == 'All Day':
                     # It's an all-day event
                     event_date = f"{event_date} (All Day)"
-                
+
                 ticker_events.append({
                     'date': event_date,
                     'summary': event['summary']
                 })
-                
+
                 # Limit to 4 events for ticker performance
                 if len(ticker_events) >= 4:
                     break
-                    
+
         except Exception as e:
             logger.error(f"Error formatting events for ticker: {e}")
             # Return fallback events if formatting fails
@@ -1059,11 +1059,11 @@ class DashboardGenerator:
                 {'date': 'Jul 20', 'summary': 'Team Building Retreat'},
                 {'date': 'Jul 28', 'summary': 'Q3 Planning Workshop'}
             ]
-        
+
         # If no events found, return a single fallback
         if not ticker_events:
             ticker_events = [{'date': 'Today', 'summary': 'No events scheduled'}]
-            
+
         return ticker_events
 
     def _save_calendar_cache(self, events: List[Dict]):
@@ -1086,20 +1086,20 @@ class DashboardGenerator:
             cache_file = Path('logs/calendar_cache.json')
             if not cache_file.exists():
                 return []
-                
+
             with open(cache_file, 'r') as f:
                 cache_data = json.load(f)
-                
+
             # Check if cache is recent (within 24 hours)
             cache_time = datetime.fromisoformat(cache_data['timestamp'])
             if datetime.now() - cache_time > timedelta(hours=24):
                 logger.info("Calendar cache is too old, ignoring")
                 return []
-                
+
             events = cache_data.get('events', [])
             logger.debug(f"Loaded {len(events)} events from calendar cache")
             return events
-            
+
         except Exception as e:
             logger.warning(f"Failed to load calendar cache: {e}")
             return []
@@ -1123,7 +1123,7 @@ class DashboardGenerator:
         try:
             # Copy static files first
             self.copy_static_files()
-            
+
             # Fetch all data
             logger.info("Fetching dashboard data...")
             weather = self.fetch_weather()
@@ -1149,43 +1149,43 @@ class DashboardGenerator:
             # Air quality data (real or mock)
             air_quality = self.fetch_air_quality()
             traffic = self._generate_realistic_traffic()
-            
+
             # Calculate sun position for arc (real calculation)
             sun_position = self._calculate_sun_position(weather)
-            
+
             # Create upcoming events for ticker from real calendar data
             upcoming_events = self._format_events_for_ticker(events)
-            
+
             # Add UV level text
             uv_level = 'High' if weather and weather.get('uv_index', 6) > 5 else 'Moderate'
-            
+
             # Generate enhanced calendar month days with previous/next month days
             month_days = []
             import calendar as cal
-            
+
             # Get calendar grid for current month
             month_cal = cal.monthcalendar(now.year, now.month)
-            
+
             # Calculate previous and next month info
             if now.month == 1:
                 prev_month, prev_year = 12, now.year - 1
             else:
                 prev_month, prev_year = now.month - 1, now.year
-                
+
             if now.month == 12:
                 next_month, next_year = 1, now.year + 1
             else:
                 next_month, next_year = now.month + 1, now.year
-            
+
             # Get number of days in previous month
             prev_month_days = cal.monthrange(prev_year, prev_month)[1]
-            
+
             # Calculate how many days from previous month to show
             first_week = month_cal[0]
             prev_month_start_day = prev_month_days - (6 - first_week.index(1)) if 1 in first_week else prev_month_days
-            
+
             next_month_day = 1
-            
+
             for week_idx, week in enumerate(month_cal):
                 for day_idx, day in enumerate(week):
                     if day == 0:
@@ -1263,27 +1263,27 @@ def main():
     import argparse
     import time
     import signal
-    
+
     parser = argparse.ArgumentParser(description='Dashboard Generator')
-    parser.add_argument('--loop', action='store_true', 
+    parser.add_argument('--loop', action='store_true',
                        help='Run continuously with periodic updates')
     parser.add_argument('--interval', type=int, default=900,
                        help='Update interval in seconds (default: 900)')
     args = parser.parse_args()
-    
+
     generator = DashboardGenerator()
-    
+
     if args.loop:
         logger.info(f"Starting dashboard generator in loop mode (interval: {args.interval}s)")
-        
+
         # Set up signal handling for graceful shutdown
         def signal_handler(signum, frame):
             logger.info("Received shutdown signal, stopping...")
             sys.exit(0)
-        
+
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
-        
+
         # Main loop
         try:
             while True:
@@ -1294,10 +1294,10 @@ def main():
                         logger.info("Dashboard generated successfully")
                     else:
                         logger.error("Dashboard generation failed")
-                    
+
                     logger.info(f"Waiting {args.interval} seconds until next update...")
                     time.sleep(args.interval)
-                        
+
                 except KeyboardInterrupt:
                     logger.info("Keyboard interrupt received, shutting down...")
                     break
@@ -1305,11 +1305,11 @@ def main():
                     logger.error(f"Error in loop: {e}")
                     logger.info("Waiting 60 seconds before retrying...")
                     time.sleep(60)
-                        
+
         except Exception as e:
             logger.error(f"Fatal error: {e}")
             sys.exit(1)
-            
+
         logger.info("Dashboard generator stopped")
         sys.exit(0)
     else:

@@ -15,12 +15,12 @@
         {% if 'severe' in alert.event.lower() or 'warning' in alert.event.lower() %}
             {% if 'tornado' in alert.event.lower() or 'severe thunderstorm' in alert.event.lower() %}severe{% else %}warning{% endif %}
         {% endif %}">
-        <div class="alert-icon">⚠️</div>
         <div class="alert-content">
+            <span class="alert-icon">⚠️</span>
             <span class="alert-event">{{ alert.event }}</span>
             <span class="alert-time">{{ alert.start }} - {{ alert.end }}</span>
-            <span class="alert-description">{{ alert.description | truncate(120) }}</span>
         </div>
+        <div class="alert-description">{{ alert.description }}</div>
     </div>
     {% endif %}
 
@@ -510,12 +510,12 @@
                            new Date(now.getTime() + 6 * 60 * 60 * 1000).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: false});
 
             alertBanner.innerHTML = `
-                <div class="alert-icon">⚠️</div>
                 <div class="alert-content">
+                    <span class="alert-icon">⚠️</span>
                     <span class="alert-event">${event}</span>
                     <span class="alert-time">${startTime} - ${endTime}</span>
-                    <span class="alert-description">${description}</span>
                 </div>
+                <div class="alert-description">${description}</div>
             `;
 
             document.body.insertBefore(alertBanner, document.body.firstChild);
