@@ -1,57 +1,64 @@
-# Raspberry Pi Dashboard
+# Pi Dashboard Web Service
 
-A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk mode on a vertical display. Features a modern card-based design with weather, calendar, local information, and news feeds with automatic updates.
+A modern dashboard web service designed to run in Docker and be accessed by Raspberry Pi devices in kiosk mode. Features a card-based design with weather, calendar, local information, and news feeds with automatic updates.
 
 ## Features
 
+- **Web Service Architecture**: Runs in Docker on powerful hardware, accessed by Pi via network
 - **Modern Card-Based Design**: Glassmorphism effects with performance optimizations
-- **Minimal Resource Usage**: Optimized for 512MB RAM and ARM1176 CPU
-- **Server-Side Rendering**: Static HTML generation reduces browser load
+- **Server-Side Rendering**: Static HTML generation reduces client load
 - **Enhanced Local Information**: Air quality, UV index, sun position, traffic patterns
 - **Auto-Updates**: Refreshes data every 15 minutes
 - **Real Weather Data**: Current conditions, 5-day forecast, and air quality from OpenWeatherMap
 - **Smart Calendar**: Complete month view with adjacent month days
 - **RSS Feed Support**: Dual news and events tickers with smooth animations
 - **Responsive**: Optimized for vertical/portrait displays
-- **Reliable**: Systemd service with automatic restarts and fallback data
+- **Multiple Pi Support**: Single dashboard service can serve multiple displays
+- **Secure Remote Access**: Tailscale integration for secure remote viewing
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Python Script │────▶│  Static HTML     │────▶│   Chromium      │
-│  (runs via cron)│     │  (generated)     │     │  (kiosk mode)   │
+│   Docker Host   │────▶│   Web Service    │────▶│  Raspberry Pi   │
+│  (Server/NAS)   │     │  (Port 8080)     │     │  (Kiosk Mode)   │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
-        │                                                    │
-        ▼                                                    ▼
-┌─────────────────┐                              ┌─────────────────┐
-│   External APIs │                              │  27" Display    │
-│  - Weather      │                              │  (vertical)     │
-│  - RSS Feeds    │                              └─────────────────┘
-│  - Calendar     │
-└─────────────────┘
+        │                        │                        │
+        ▼                        ▼                        ▼
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   External APIs │     │  Static HTML     │     │   Midori/       │
+│  - Weather      │     │  (Auto-refresh)  │     │   Chromium      │
+│  - RSS Feeds    │     │                  │     │   (Fullscreen)  │
+│  - Calendar     │     │                  │     │                 │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                                                          │
+                         Optional: Tailscale             ▼
+                        ┌──────────────────┐     ┌─────────────────┐
+                        │    TSDProxy      │     │   Display       │
+                        │ (Reverse Proxy)  │     │  (Vertical)     │
+                        └──────────────────┘     └─────────────────┘
 ```
 
 ## Requirements
 
-### Hardware
+### Docker Host (Server/NAS/Desktop)
 
-- Raspberry Pi B+ (or newer)
-- 512MB+ RAM
-- 8GB+ SD Card
-- Display (optimized for vertical orientation)
+- **Hardware**: Any x86/ARM64 device with Docker support
+- **Software**: Docker and Docker Compose
+- **Network**: Internet access for API calls
+- **Optional**: Tailscale account for secure remote access
 
-### Software
+### Raspberry Pi (Display Client)
 
-- Raspberry Pi OS Lite (32-bit)
-- Python 3.7+
-- Chromium Browser
+- **Hardware**: Raspberry Pi 2B+ or newer, 8GB+ SD Card, Display
+- **Software**: Raspberry Pi OS Lite, X11, Midori or Chromium
+- **Network**: WiFi or Ethernet access to Docker host
 
 ## Quick Start
 
-### 🐳 Docker Deployment (Recommended)
+## Step 1: Deploy Dashboard Service
 
-For deployment on a more powerful server with Pi accessing via network:
+Deploy the dashboard web service on a powerful device (server, NAS, desktop):
 
 ```bash
 # Clone repository
@@ -68,26 +75,7 @@ docker compose up -d
 # Access at http://localhost:8080
 ```
 
-**Benefits:**
-- No Pi resource constraints
-- Simple one-command deployment
-- Easy updates and configuration
-- Multiple Pi support
-- Centralized deployment
-
-**Requirements:**
-- Docker and Docker Compose
-- OpenWeatherMap API key (free)
-
-**Google Calendar (Optional):**
-To enable Google Calendar integration:
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create OAuth 2.0 credentials (Desktop application)
-3. Add `http://localhost:8081` as authorized redirect URI
-4. Update `.env` with your credentials
-5. Run `python src/generate_dashboard.py` once to authenticate
-
-**Docker Commands:**
+**Service Management:**
 ```bash
 # View logs
 docker compose logs -f
@@ -102,203 +90,199 @@ docker compose down
 git pull && docker compose up -d --build
 ```
 
-### Basic Raspberry Pi Setup
+### Remote Access with Tailscale (Recommended)
 
-The installation script automatically configures most settings for kiosk mode, but you should understand what it does to your system. Only basic OS setup is required first:
+For secure access across networks, set up Tailscale:
 
-#### 1. Install Raspberry Pi OS Lite
+1. **Install Tailscale on Docker host:**
+   ```bash
+   # Follow instructions at https://tailscale.com/download
+   curl -fsSL https://tailscale.com/install.sh | sh
+   sudo tailscale up
+   ```
+
+2. **Configure TSDProxy for easy access:**
+   ```bash
+   # Install TSDProxy (Tailscale reverse proxy)
+   go install github.com/almeidapaulopt/tsdproxy@latest
+   
+   # Create config for dashboard
+   tsdproxy --from dashboard --to localhost:8080
+   ```
+
+3. **Access dashboard at:** `https://dashboard.your-tailnet.ts.net`
+
+### Google Calendar (Optional)
+
+To enable Google Calendar integration:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create OAuth 2.0 credentials (Desktop application)
+3. Add `http://localhost:8081` as authorized redirect URI
+4. Update `.env` with your credentials
+5. Run `python src/generate_dashboard.py` once to authenticate
+
+## Step 2: Configure Raspberry Pi Kiosk
+
+Set up your Raspberry Pi as a kiosk display client:
+
+### 1. Install Raspberry Pi OS
 
 1. Download [Raspberry Pi OS Lite](https://www.raspberrypi.org/software/operating-systems/) (32-bit)
 2. Flash to SD card using [Raspberry Pi Imager](https://www.raspberrypi.org/software/)
 3. Enable SSH by creating empty `ssh` file in boot partition
-4. Boot Pi and SSH in: `ssh pi@raspberrypi.local` (default user is `pi` and password is `raspberry`)
+4. Boot Pi and SSH in: `ssh pi@raspberrypi.local`
 
-#### 2. Basic System Configuration
+### 2. Basic System Setup
 
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Configure Pi settings (optional - for boot options, SSH, filesystem)
+# Install required packages for kiosk mode
+sudo apt install -y \
+    xserver-xorg-video-fbdev \
+    xserver-xorg \
+    xinit \
+    x11-xserver-utils \
+    matchbox-window-manager \
+    midori \
+    unclutter
+
+# Configure auto-login (optional)
 sudo raspi-config
+# System Options → Boot / Auto Login → Console Autologin
 ```
 
-**Optional `raspi-config` settings:**
+### 3. Configure Kiosk Mode
 
-- **System Options** → **Boot / Auto Login** → **Console Autologin**
-- **Interface Options** → **SSH** → **Enable** 
-- **Advanced Options** → **Expand Filesystem**
+Replace `DASHBOARD_URL` with your dashboard service URL:
 
-> **Note:** The installation script will automatically configure X11 kiosk mode, display rotation, GPU memory, and auto-start settings.
+**For local network access:**
+```bash
+DASHBOARD_URL="http://192.168.1.100:8080"  # Replace with your Docker host IP
+```
 
-### Development (macOS/Linux)
+**For Tailscale access:**
+```bash
+DASHBOARD_URL="https://dashboard.your-tailnet.ts.net"
+```
 
-1. Clone the repository:
-
-*Note: you will need Git installed. If you don't have it, install it with `sudo apt install git -y` on your Raspberry Pi.*
+**Create kiosk startup script:**
 
 ```bash
-git clone https://github.com/francojc/pi-dashboard.git
-cd pi-dashboard
-```
-
-2. Set up Python environment:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-3. Configure API keys:
-```bash
-cp .env.example .env
-# Edit .env with your OpenWeatherMap API key
-```
-
-4. Generate dashboard:
-```bash
-python src/generate_dashboard.py
-```
-
-5. View dashboard:
-```bash
-python -m http.server 8000 --directory output
-# Open http://localhost:8000 in browser
-```
-
-### Deployment (Raspberry Pi)
-
-**Prerequisites:** Complete the [Basic Raspberry Pi Setup](#basic-raspberry-pi-setup) section above first.
-
-1. SSH into your Raspberry Pi
-2. Download and run the installation script:
-
-```bash
-# Download the script
-wget https://raw.githubusercontent.com/YOUR_USERNAME/pi-dashboard/main/deployment/install.sh
-chmod +x install.sh
-
-# Run with default settings (pi user, YOUR_USERNAME repo)
-./install.sh
-
-# Or specify custom user and GitHub username
-./install.sh -u myuser -g githubuser
-
-# See all options
-./install.sh -h
-```
-
-**Installation Script Options:**
-
-- `-u username` - System username (default: pi)
-- `-g github_user` - GitHub repository username (default: YOUR_USERNAME)  
-- `-h` - Show help
-
-**What the installation script configures automatically:**
-
-- ✅ **X11 kiosk mode**: Creates `/home/USERNAME/.xinitrc` with Chromium fullscreen settings
-- ✅ **Auto-start X11**: Adds startup commands to `/home/USERNAME/.bash_profile`
-- ✅ **Display rotation**: Adds `display_rotate=1` and `gpu_mem=64` to `/boot/firmware/config.txt`
-- ✅ **Dashboard services**: Installs systemd services for automatic updates
-- ✅ **Daily reboot**: Adds cron job for 4 AM daily restart
-
-**Files modified by the installer:**
-
-```
-/home/USERNAME/.xinitrc          # X11 startup script (created)
-/home/USERNAME/.bash_profile     # Auto-start X11 (appended)
-/boot/config.txt        # Display settings (appended)
-/etc/systemd/system/             # Dashboard services (copied)
-/var/spool/cron/crontabs/        # Daily reboot cron (added)
-```
-
-3. Configure your API keys (replace `pi` with your username if different):
-
-```bash
-nano /home/pi/pi-dashboard/.env
-```
-
-4. Reboot to start dashboard:
-
-```bash
-sudo reboot
-```
-
-#### Manual Configuration Details
-
-If you prefer to configure manually or want to understand what the installer does, here are the equivalent manual steps:
-
-<details>
-<summary>🔧 Click to see manual configuration steps</summary>
-
-**1. Create X11 startup script:**
-
-```bash
-nano /home/pi/.xinitrc
-```
-
-Add:
-
-```bash
+cat > /home/pi/kiosk.sh << 'EOF'
 #!/bin/bash
+
+# Dashboard URL - Update this with your service URL
+DASHBOARD_URL="http://192.168.1.100:8080"
+
+# Disable screen blanking and power management
 xset -dpms
 xset s off
 xset s noblank
+
+# Hide mouse cursor
 unclutter -idle 0.5 -root &
-chromium-browser --noerrdialogs --disable-infobars --kiosk --incognito file:///home/pi/pi-dashboard/output/index.html
-```
-```bash
-chmod +x /home/pi/.xinitrc
+
+# Start window manager
+matchbox-window-manager -use_titlebar no &
+
+# Wait a moment for WM to start
+sleep 2
+
+# Start browser in kiosk mode
+midori -e Fullscreen -a "$DASHBOARD_URL"
+EOF
+
+chmod +x /home/pi/kiosk.sh
 ```
 
-**2. Configure auto-start X11:**
+### 4. Auto-Start Kiosk on Boot
 
 ```bash
-nano /home/pi/.bash_profile
-```
-Add:
-```bash
+# Create .xinitrc to start kiosk
+echo 'exec /home/pi/kiosk.sh' > /home/pi/.xinitrc
+
+# Auto-start X11 on login
+cat >> /home/pi/.bash_profile << 'EOF'
 if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
-  startx
+    startx
 fi
+EOF
 ```
 
-**3. Configure display rotation:**
+### 5. Display Configuration (Optional)
+
+**For vertical displays, configure rotation:**
 
 ```bash
-sudo nano /boot/firmware/config.txt
-```
-Add:
-```ini
-display_rotate=1
-gpu_mem=64
+# Add to /boot/firmware/config.txt
+echo 'display_rotate=1' | sudo tee -a /boot/firmware/config.txt
+echo 'gpu_mem=64' | sudo tee -a /boot/firmware/config.txt
 ```
 
-**4. Set up daily reboot:**
-```bash
-crontab -e
-```
-Add:
-```
-0 4 * * * /sbin/reboot
-```
-
-</details>
-
-#### Optional System Optimizations
-
-Additional optimizations you can apply manually:
+**Alternative browser options:**
 
 ```bash
-# Disable Bluetooth and WiFi if using Ethernet only
-sudo systemctl disable bluetooth hciuart
-echo 'dtoverlay=disable-wifi' | sudo tee -a /boot/firmware/config.txt
-echo 'dtoverlay=disable-bt' | sudo tee -a /boot/firmware/config.txt
+# For Chromium instead of Midori (more resource intensive, but not available for older Pi models):
+sudo apt install -y chromium-browser
 
-# Disable other services to save resources
-sudo systemctl disable triggerhappy
-sudo systemctl disable dphys-swapfile  # If you have enough RAM
+# Update kiosk.sh to use Chromium:
+# chromium-browser --kiosk --noerrdialogs --disable-infobars --incognito "$DASHBOARD_URL"
+```
+
+### 6. System Optimizations
+
+**Resource optimization for older Pi models:**
+
+```bash
+# Disable unnecessary services
+sudo systemctl disable bluetooth
+sudo systemctl disable wifi-powersave@wlan0.service
+
+# Add to /boot/firmware/config.txt for better performance
+echo 'disable_overscan=1' | sudo tee -a /boot/firmware/config.txt
+echo 'dtparam=audio=off' | sudo tee -a /boot/firmware/config.txt
+
+# Set up daily reboot at 4 AM (optional)
+echo '0 4 * * * /sbin/reboot' | crontab -
+```
+
+**Test the setup:**
+
+```bash
+# Reboot to test auto-start
+sudo reboot
+
+# Or start manually for testing
+startx
+```
+
+## Development & Testing
+
+For local development and testing:
+
+```bash
+# Clone repository
+git clone https://github.com/francojc/pi-dashboard-docker.git
+cd pi-dashboard-docker
+
+# Set up Python environment
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Configure API keys
+cp .env.example .env
+# Edit .env with your OpenWeatherMap API key
+
+# Generate dashboard once
+python src/generate_dashboard.py
+
+# View generated output
+python -m http.server 8000 --directory output
+# Open http://localhost:8000 in browser
 ```
 
 ## Configuration
@@ -408,55 +392,89 @@ Edit CSS grid/flexbox in `static/styles.css`. The layout uses flexbox for vertic
 
 ## Troubleshooting
 
-### Dashboard Not Updating
+### Docker Service Issues
 
 ```bash
-# Check timer status
-sudo systemctl status dashboard-updater.timer
+# Check service status
+docker compose ps
 
 # View logs
-journalctl -u dashboard-updater.service -f
+docker compose logs -f
 
-# Run manually (replace pi with your username if different)
-cd /home/pi/pi-dashboard
-./venv/bin/python src/generate_dashboard.py
+# Restart services
+docker compose restart
+
+# Check dashboard accessibility
+curl -I http://localhost:8080
 ```
 
-### Display Issues
+### Pi Kiosk Issues
 
 ```bash
-# Check kiosk service
-sudo systemctl status dashboard-kiosk.service
+# Check X11 status
+ps aux | grep X
 
-# View Chromium logs
-journalctl -u dashboard-kiosk.service -f
+# Restart kiosk manually
+sudo pkill X
+startx
 
-# Restart display
-sudo systemctl restart dashboard-kiosk.service
+# View system logs
+journalctl -f
+
+# Test browser manually
+DISPLAY=:0 midori -e Fullscreen -a http://your-dashboard-url:8080
 ```
 
-### Memory Issues
+### Network Connectivity
 
-The Pi B+ has limited RAM. If Chromium crashes:
+```bash
+# Test dashboard access from Pi
+curl -I http://your-docker-host:8080
 
-1. Ensure daily reboot is enabled (4 AM by default)
-2. Check swap usage: `free -h`
-3. Reduce RSS feed items in config
+# For Tailscale issues
+sudo tailscale status
+sudo tailscale ping your-docker-host
+
+# Check DNS resolution
+nslookup dashboard.your-tailnet.ts.net
+```
+
+### Performance Issues
+
+For older Pi models experiencing slow performance:
+
+1. Use Midori instead of Chromium
+2. Increase GPU memory: `gpu_mem=128` in `/boot/firmware/config.txt`
+3. Enable daily reboot: `0 4 * * * /sbin/reboot` in crontab
+4. Disable unnecessary services
 
 ## Performance Optimization
 
-- **No JavaScript**: Dashboard uses only HTML/CSS
-- **Minimal Cache**: Reduces SD card wear
-- **Incognito Mode**: Prevents session data buildup
-- **GPU Acceleration**: Uses CSS transforms for animations
-- **Daily Reboot**: Clears memory leaks
+### Docker Service
+- **Server-side rendering**: Static HTML generation reduces client load
+- **Efficient caching**: Docker volumes for persistent data
+- **Resource management**: Automatic container restart on failure
+
+### Pi Kiosk Client
+- **Lightweight browser**: Midori recommended for older Pi models
+- **No JavaScript dependencies**: Dashboard uses only HTML/CSS
+- **Minimal cache**: Incognito/private browsing prevents buildup
+- **GPU acceleration**: CSS transforms for smooth animations
+- **Memory management**: Daily reboot clears potential leaks
 
 ## Security Considerations
 
-- API keys stored in `.env` (not committed to git)
-- Runs as non-root user (`pi`)
+### Docker Service
+- API keys stored in environment variables (not in images)
+- Containers run as non-root users
 - No external JavaScript dependencies
-- Chromium sandbox disabled (required for Pi B+)
+- OAuth tokens stored as mounted files (not in containers)
+
+### Network Security
+- **Tailscale recommended**: End-to-end encrypted access
+- **TSDProxy**: HTTPS termination and domain routing
+- **Local network**: Standard HTTP for internal access
+- **Pi client**: Read-only access to dashboard service
 
 ## Contributing
 
@@ -474,4 +492,6 @@ MIT License - see LICENSE file for details
 
 - Weather data from [OpenWeatherMap](https://openweathermap.org/)
 - Inspired by MagicMirror² project
-- Optimized for Raspberry Pi B+ constraints
+- [Tailscale](https://tailscale.com/) for secure networking
+- [TSDProxy](https://github.com/almeidapaulopt/tsdproxy) for reverse proxy
+- Designed for low-resource Pi devices as display clients
