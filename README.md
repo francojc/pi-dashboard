@@ -122,6 +122,18 @@ To enable Google Calendar integration:
 4. Update `.env` with your credentials
 5. Run `python src/generate_dashboard.py` once to authenticate
 
+Then specify your calendar ID(s) in `src/config/config.json`:
+
+```json
+{
+  "calendar": {
+    "ids": ["calendar_id_1", "calendar_id_2"],
+    "timezone": "Europe/London",
+    "max_events": 5
+  }
+}
+```
+
 ## Step 2: Configure Raspberry Pi Kiosk
 
 Set up your Raspberry Pi as a kiosk display client:
