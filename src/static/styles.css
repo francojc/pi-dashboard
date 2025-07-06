@@ -202,7 +202,7 @@ body {
 }
 
 .weather-icon-large {
-  font-size: 5em;
+  font-size: 6em;
   filter: drop-shadow(0 0 20px rgba(100, 255, 218, 0.3));
 }
 
@@ -216,6 +216,12 @@ body {
 }
 
 .left-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
+}
+
+.right-column {
   display: flex;
   flex-direction: column;
   gap: var(--grid-gap);
@@ -255,9 +261,9 @@ body {
 
 .forecast-item {
   display: grid;
-  grid-template-columns: 80px 40px 1fr 80px;
+  grid-template-columns: 80px 60px 1fr 80px;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
   padding: 12px 0;
   border-bottom: 1px solid rgba(100, 255, 218, 0.1);
 }
@@ -272,8 +278,8 @@ body {
 }
 
 .forecast-icon-small {
-  width: 32px;
-  height: 32px;
+  width: 3em;
+  height: 3em;
 }
 
 .forecast-desc {
