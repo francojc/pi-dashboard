@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Development files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Application output and logs
+output/
+logs/
+*.log
+
+# OAuth tokens
+token.json
+credentials.json
+
+# Deployment files
+deployment/
+*.service
+*.timer
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore

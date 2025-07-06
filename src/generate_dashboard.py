@@ -52,7 +52,10 @@ class GoogleCalendarService:
 
     def _authenticate(self):
         """Authenticate with Google Calendar API"""
-        creds_file = 'token.json'
+        # Use absolute path for token file for container compatibility
+        script_dir = Path(__file__).resolve().parent
+        project_root = script_dir.parent
+        creds_file = project_root / 'token.json'
 
         # Load existing credentials
         if os.path.exists(creds_file):
@@ -73,9 +76,10 @@ class GoogleCalendarService:
                 client_secret = os.getenv('GOOGLE_CALENDAR_CLIENT_SECRET')
 
                 if not client_id or not client_secret:
-                    logger.error("GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET must be set in environment variables")
-                    logger.error(f"Current values - CLIENT_ID: {'<set>' if client_id else '<missing>'}, CLIENT_SECRET: {'<set>' if client_secret else '<missing>'}")
-                    raise ValueError("Required Google Calendar credentials not found in environment variables")
+                    logger.warning("Google Calendar credentials not configured - using mock calendar data")
+                    logger.info("To enable Google Calendar, set GOOGLE_CALENDAR_CLIENT_ID and GOOGLE_CALENDAR_CLIENT_SECRET")
+                    self.service = None
+                    return
 
                 # Create proper client configuration for installed app
                 client_config = {
@@ -117,7 +121,7 @@ class GoogleCalendarService:
     def get_events(self, calendar_id='primary', max_results=20) -> List[Dict]:
         """Fetch upcoming events from Google Calendar (start of today through next 7 days)"""
         if not self.service:
-            logger.error("Calendar service not authenticated")
+            logger.debug("Google Calendar not configured - returning empty events list")
             return []
 
         try:
@@ -346,12 +350,21 @@ class GoogleCalendarService:
 class DashboardGenerator:
     """Main dashboard generator class"""
 
-    def __init__(self, config_path: str = "src/config/config.json"):
+    def __init__(self, config_path: Optional[str] = None):
         """Initialize the dashboard generator with configuration"""
+        # Set up paths relative to script location for container compatibility
+        script_dir = Path(__file__).resolve().parent
+        project_root = script_dir.parent
+        
+        if config_path is None:
+            config_path = script_dir / "config" / "config.json"
+        else:
+            config_path = Path(config_path)
+            
         self.config = self._load_config(config_path)
-        self.template_dir = Path("src/templates")
-        self.static_dir = Path("src/static")
-        self.output_dir = Path("output")
+        self.template_dir = script_dir / "templates"
+        self.static_dir = script_dir / "static"
+        self.output_dir = project_root / "output"
         self.output_dir.mkdir(exist_ok=True)
         self.output_static_dir = self.output_dir / "static"
         self.output_static_dir.mkdir(exist_ok=True)
@@ -1233,9 +1246,62 @@ class DashboardGenerator:
 
 def main():
     """Main entry point"""
+    import argparse
+    import time
+    import signal
+    
+    parser = argparse.ArgumentParser(description='Dashboard Generator')
+    parser.add_argument('--loop', action='store_true', 
+                       help='Run continuously with periodic updates')
+    parser.add_argument('--interval', type=int, default=900,
+                       help='Update interval in seconds (default: 900)')
+    args = parser.parse_args()
+    
     generator = DashboardGenerator()
-    success = generator.generate_dashboard()
-    sys.exit(0 if success else 1)
+    
+    if args.loop:
+        logger.info(f"Starting dashboard generator in loop mode (interval: {args.interval}s)")
+        
+        # Set up signal handling for graceful shutdown
+        def signal_handler(signum, frame):
+            logger.info("Received shutdown signal, stopping...")
+            sys.exit(0)
+        
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+        
+        # Main loop
+        try:
+            while True:
+                try:
+                    logger.info("Generating dashboard...")
+                    success = generator.generate_dashboard()
+                    if success:
+                        logger.info("Dashboard generated successfully")
+                    else:
+                        logger.error("Dashboard generation failed")
+                    
+                    logger.info(f"Waiting {args.interval} seconds until next update...")
+                    time.sleep(args.interval)
+                        
+                except KeyboardInterrupt:
+                    logger.info("Keyboard interrupt received, shutting down...")
+                    break
+                except Exception as e:
+                    logger.error(f"Error in loop: {e}")
+                    logger.info("Waiting 60 seconds before retrying...")
+                    time.sleep(60)
+                        
+        except Exception as e:
+            logger.error(f"Fatal error: {e}")
+            sys.exit(1)
+            
+        logger.info("Dashboard generator stopped")
+        sys.exit(0)
+    else:
+        # Single run mode
+        success = generator.generate_dashboard()
+        sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":

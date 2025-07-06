@@ -1,0 +1,43 @@
+services:
+  app:
+    image: python:3.11-alpine
+    working_dir: /app
+    command: sh -c "
+      apk add --no-cache gcc musl-dev libffi-dev openssl-dev &&
+      pip install --no-cache-dir -r requirements.txt &&
+      python src/generate_dashboard.py --loop"
+    environment:
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - GOOGLE_CALENDAR_CLIENT_ID=${GOOGLE_CALENDAR_CLIENT_ID:-}
+      - GOOGLE_CALENDAR_CLIENT_SECRET=${GOOGLE_CALENDAR_CLIENT_SECRET:-}
+      - WEATHER_LOCATION=${WEATHER_LOCATION:-Winston-Salem,NC,US}
+      - WEATHER_UNITS=${WEATHER_UNITS:-imperial}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./src:/app/src:ro
+      - ./requirements.txt:/app/requirements.txt:ro
+      - ./token.json:/app/token.json:ro
+      - dashboard_output:/app/output
+    restart: unless-stopped
+    networks:
+      - dashboard
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "${PORT:-8080}:80"
+    volumes:
+      - dashboard_output:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - dashboard
+
+volumes:
+  dashboard_output:
+
+networks:
+  dashboard:
+    driver: bridge

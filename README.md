@@ -49,6 +49,59 @@ A lightweight, efficient dashboard designed for Raspberry Pi B+ running in kiosk
 
 ## Quick Start
 
+### 🐳 Docker Deployment (Recommended)
+
+For deployment on a more powerful server with Pi accessing via network:
+
+```bash
+# Clone repository
+git clone https://github.com/francojc/pi-dashboard-docker.git
+cd pi-dashboard-docker
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your OpenWeatherMap API key
+
+# Deploy with Docker
+docker compose up -d
+
+# Access at http://localhost:8080
+```
+
+**Benefits:**
+- No Pi resource constraints
+- Simple one-command deployment
+- Easy updates and configuration
+- Multiple Pi support
+- Centralized deployment
+
+**Requirements:**
+- Docker and Docker Compose
+- OpenWeatherMap API key (free)
+
+**Google Calendar (Optional):**
+To enable Google Calendar integration:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create OAuth 2.0 credentials (Desktop application)
+3. Add `http://localhost:8081` as authorized redirect URI
+4. Update `.env` with your credentials
+5. Run `python src/generate_dashboard.py` once to authenticate
+
+**Docker Commands:**
+```bash
+# View logs
+docker compose logs -f
+
+# Restart services
+docker compose restart
+
+# Stop services
+docker compose down
+
+# Update and rebuild
+git pull && docker compose up -d --build
+```
+
 ### Basic Raspberry Pi Setup
 
 The installation script automatically configures most settings for kiosk mode, but you should understand what it does to your system. Only basic OS setup is required first:
