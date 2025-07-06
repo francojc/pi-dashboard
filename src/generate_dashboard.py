@@ -255,6 +255,93 @@ class GoogleCalendarService:
             logger.error(f"Failed to fetch week calendar events: {e}")
             return {}
 
+    def get_agenda_events(self, calendar_id='primary') -> List[Dict]:
+        """Fetch agenda events for the next 5 days"""
+        if not self.service:
+            logger.error("Calendar service not authenticated")
+            return []
+
+        try:
+            # Get events from start of today to 5 days ahead
+            now = datetime.utcnow()
+            start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            five_days_ahead = start_of_today + timedelta(days=5)
+
+            events_result = self.service.events().list(
+                calendarId=calendar_id,
+                timeMin=start_of_today.isoformat() + 'Z',
+                timeMax=five_days_ahead.isoformat() + 'Z',
+                maxResults=50,
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()
+
+            events = events_result.get('items', [])
+            agenda = []
+            
+            # Initialize agenda structure for next 5 days
+            for i in range(5):
+                day = datetime.now() + timedelta(days=i)
+                day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day.weekday()]
+                
+                if i == 0:
+                    display_name = 'Today'
+                elif i == 1:
+                    display_name = 'Tomorrow'
+                else:
+                    display_name = day_name
+                
+                agenda_day = {
+                    'date': day.strftime('%m/%d'),
+                    'day_name': display_name,
+                    'day_abbr': day_name[:3],
+                    'is_today': i == 0,
+                    'events': []
+                }
+                agenda.append(agenda_day)
+
+            # Process events into agenda structure
+            for event in events:
+                start = event['start'].get('dateTime', event['start'].get('date'))
+                end = event['end'].get('dateTime', event['end'].get('date'))
+                
+                # Determine event date
+                if 'T' in start:
+                    # Timed event
+                    start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
+                    end_dt = datetime.fromisoformat(end.replace('Z', '+00:00'))
+                    event_date = start_dt.date()
+                    
+                    event_data = {
+                        'summary': event.get('summary', 'Untitled Event'),
+                        'start': start_dt.strftime('%H:%M'),
+                        'end': end_dt.strftime('%H:%M'),
+                        'type': 'timed'
+                    }
+                else:
+                    # All-day event
+                    event_date = datetime.fromisoformat(start).date()
+                    
+                    event_data = {
+                        'summary': event.get('summary', 'Untitled Event'),
+                        'start': 'All Day',
+                        'end': '',
+                        'type': 'all_day'
+                    }
+                
+                # Find the matching agenda day
+                today = datetime.now().date()
+                days_ahead = (event_date - today).days
+                
+                if 0 <= days_ahead < 5:
+                    agenda[days_ahead]['events'].append(event_data)
+
+            return agenda
+
+        except Exception as e:
+            logger.error(f"Failed to fetch agenda calendar events: {e}")
+            return []
+
 
 class DashboardGenerator:
     """Main dashboard generator class"""
@@ -789,6 +876,66 @@ class DashboardGenerator:
             {'summary': 'Client Call', 'start': '16:00', 'end': '17:00'}
         ]
 
+    def fetch_agenda_events(self) -> List[Dict]:
+        """Fetch agenda events for the next 5 days from Google Calendar or return mock data"""
+        calendar_config = self.config.get('calendar', {})
+
+        # Use real Google Calendar if configured
+        if not calendar_config.get('use_mock_data', True) and self.calendar_service:
+            try:
+                calendar_id = calendar_config.get('calendar_id', 'primary')
+                agenda_events = self.calendar_service.get_agenda_events(calendar_id)
+                logger.info(f"Fetched agenda events from Google Calendar")
+                return agenda_events
+            except Exception as e:
+                logger.error(f"Failed to fetch Google Calendar agenda events: {e}")
+
+        # Return mock agenda data for next 5 days
+        logger.info("Using mock agenda data")
+        now = datetime.now()
+        agenda = []
+        
+        for i in range(5):
+            day = now + timedelta(days=i)
+            day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day.weekday()]
+            
+            # Today gets a special name
+            if i == 0:
+                display_name = 'Today'
+            elif i == 1:
+                display_name = 'Tomorrow'
+            else:
+                display_name = day_name
+            
+            agenda_day = {
+                'date': day.strftime('%m/%d'),
+                'day_name': display_name,
+                'day_abbr': day_name[:3],
+                'is_today': i == 0,
+                'events': []
+            }
+            
+            # Add mock events for some days
+            if i == 0:  # Today
+                agenda_day['events'] = [
+                    {'summary': 'Do laundry', 'start': '21:00', 'end': '22:00', 'type': 'timed'},
+                    {'summary': 'Monthly review', 'start': 'All Day', 'end': '', 'type': 'all_day'}
+                ]
+            elif i == 1:  # Tomorrow
+                agenda_day['events'] = [
+                    {'summary': 'Team Meeting', 'start': '10:00', 'end': '11:00', 'type': 'timed'}
+                ]
+            elif i == 3:  # Day after tomorrow + 1
+                agenda_day['events'] = [
+                    {'summary': 'Client Call', 'start': '14:00', 'end': '15:00', 'type': 'timed'},
+                    {'summary': 'Deadline: Project X', 'start': 'All Day', 'end': '', 'type': 'all_day'}
+                ]
+            # Days 2 and 4 will have no events to test empty day display
+            
+            agenda.append(agenda_day)
+        
+        return agenda
+
     def fetch_week_calendar_events(self) -> Dict[str, Dict]:
         """Fetch week calendar events from Google Calendar or return mock data"""
         calendar_config = self.config.get('calendar', {})
@@ -957,6 +1104,7 @@ class DashboardGenerator:
             articles = self.fetch_rss_feeds()
             events = self.fetch_calendar_events()
             week_events = self.fetch_week_calendar_events()
+            agenda_events = self.fetch_agenda_events()
 
             # Get current date/time info
             now = datetime.now()
@@ -1044,6 +1192,7 @@ class DashboardGenerator:
                 'articles': articles,
                 'events': events,
                 'week_events': week_events,
+                'agenda_events': agenda_events,
                 'current_time': now.strftime('%H:%M'),
                 'day_name': day_names[now.weekday()],
                 'date_info': f"{month_names[now.month - 1]} {now.day}",

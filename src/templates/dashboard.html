@@ -504,51 +504,109 @@ body {
 }
 
 .mini-day.today {
-  background: var(--text-accent);
+  background: #ffa726;
   color: var(--bg-dark);
   font-weight: 600;
+  box-shadow: 0 0 8px rgba(255, 167, 38, 0.6);
 }
 
 .mini-day.other-month {
   opacity: 0.3;
 }
 
-/* Events List */
-.events-list {
+/* Agenda View */
+.agenda-view {
   flex: 1;
   overflow-y: auto;
 }
 
-.event-item {
+.agenda-day {
   display: flex;
   gap: 12px;
-  padding: 10px 0;
-  border-left: 3px solid var(--text-accent);
-  padding-left: 12px;
-  margin-bottom: 12px;
-  background: rgba(100, 255, 218, 0.05);
-  border-radius: 0 8px 8px 0;
+  padding: 8px 0;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: rgba(100, 255, 218, 0.03);
 }
 
-.event-time-col {
+.agenda-day.agenda-today {
+  background: rgba(255, 167, 38, 0.08);
+  border: 1px solid rgba(255, 167, 38, 0.2);
+}
+
+.agenda-date {
+  width: 70px;
   min-width: 70px;
-  font-size: 1.05rem;
+  text-align: center;
+  padding: 8px 6px;
+  background: rgba(100, 255, 218, 0.1);
+  border-radius: 6px;
+  margin: 4px;
+}
+
+.agenda-today .agenda-date {
+  background: rgba(255, 167, 38, 0.2);
+  color: #ffa726;
+}
+
+.agenda-date-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.agenda-day-name {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.agenda-today .agenda-day-name {
+  color: #ffa726;
+}
+
+.agenda-events {
+  flex: 1;
+  padding: 4px 8px;
+}
+
+.agenda-event {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 4px 0;
+  border-left: 2px solid var(--text-accent);
+  padding-left: 8px;
+}
+
+.agenda-event.agenda-all-day {
+  border-left-color: #f39c12;
+}
+
+.agenda-event-time {
+  min-width: 50px;
+  font-size: 0.9rem;
   color: var(--text-accent);
   font-weight: 500;
 }
 
-.event-title {
-  font-size: 1.1rem;
-  line-height: 1.3;
-}
-
-.all-day-event {
-  border-left-color: #f39c12;
-  background: rgba(243, 156, 18, 0.05);
-}
-
-.all-day-event .event-time-col {
+.agenda-all-day .agenda-event-time {
   color: #f39c12;
+}
+
+.agenda-event-title {
+  font-size: 0.95rem;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.agenda-no-events {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 4px 8px;
 }
 
 /* News Ticker Section */
@@ -726,14 +784,13 @@ body {
                     <h2 class="card-title">{{ current_month | default('July') }} {{ current_year | default('2025') }}</h2>
 
                     <div class="calendar-header-info">
-                        <div class="month-year">{{ week_start_date | default('Independence Day Weekend') }}</div>
                         <div class="week-info">Week {{ week_number | default('27') }}</div>
                     </div>
 
                     <!-- Mini Calendar Grid -->
                     <div class="mini-calendar">
                         <!-- Day headers -->
-                        {% for day in ['S', 'M', 'T', 'W', 'T', 'F', 'S'] %}
+                        {% for day in ['M', 'T', 'W', 'T', 'F', 'S', 'S'] %}
                         <div class="mini-day header">{{ day }}</div>
                         {% endfor %}
 
@@ -782,38 +839,98 @@ body {
                         {% endif %}
                     </div>
 
-                    <!-- Today's Events -->
-                    <div class="events-list">
-                        {% if events and events|length > 0 %}
-                            {% for event in events %}
-                            <div class="event-item {% if event.start == 'All Day' %}all-day-event{% endif %}">
-                                <div class="event-time-col">
-                                    {% if event.start == 'All Day' %}
-                                        All Day
+                    <!-- 5-Day Agenda -->
+                    <div class="agenda-view">
+                        {% if agenda_events and agenda_events|length > 0 %}
+                            {% for day in agenda_events %}
+                            <div class="agenda-day {% if day.is_today %}agenda-today{% endif %}">
+                                <div class="agenda-date">
+                                    <div class="agenda-date-text">{{ day.date }}</div>
+                                    <div class="agenda-day-name">{{ day.day_name }}</div>
+                                </div>
+                                <div class="agenda-events">
+                                    {% if day.events and day.events|length > 0 %}
+                                        {% for event in day.events %}
+                                        <div class="agenda-event {% if event.type == 'all_day' %}agenda-all-day{% endif %}">
+                                            <div class="agenda-event-time">
+                                                {% if event.start == 'All Day' %}
+                                                    All Day
+                                                {% else %}
+                                                    {{ event.start }}
+                                                {% endif %}
+                                            </div>
+                                            <div class="agenda-event-title">{{ event.summary }}</div>
+                                        </div>
+                                        {% endfor %}
                                     {% else %}
-                                        {{ event.start }}
+                                        <div class="agenda-no-events">No events</div>
                                     {% endif %}
                                 </div>
-                                <div class="event-title">{{ event.summary }}</div>
                             </div>
                             {% endfor %}
                         {% else %}
-                            <!-- Fallback events -->
-                            <div class="event-item all-day-event">
-                                <div class="event-time-col">All Day</div>
-                                <div class="event-title">Independence Day</div>
+                            <!-- Fallback agenda -->
+                            <div class="agenda-day agenda-today">
+                                <div class="agenda-date">
+                                    <div class="agenda-date-text">07/05</div>
+                                    <div class="agenda-day-name">Today</div>
+                                </div>
+                                <div class="agenda-events">
+                                    <div class="agenda-event">
+                                        <div class="agenda-event-time">21:00</div>
+                                        <div class="agenda-event-title">Do laundry</div>
+                                    </div>
+                                    <div class="agenda-event agenda-all-day">
+                                        <div class="agenda-event-time">All Day</div>
+                                        <div class="agenda-event-title">Monthly review</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="event-item">
-                                <div class="event-time-col">9:00 AM</div>
-                                <div class="event-title">Team Standup Meeting</div>
+                            <div class="agenda-day">
+                                <div class="agenda-date">
+                                    <div class="agenda-date-text">07/06</div>
+                                    <div class="agenda-day-name">Tomorrow</div>
+                                </div>
+                                <div class="agenda-events">
+                                    <div class="agenda-event">
+                                        <div class="agenda-event-time">10:00</div>
+                                        <div class="agenda-event-title">Team Meeting</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="event-item">
-                                <div class="event-time-col">2:00 PM</div>
-                                <div class="event-title">Client Strategy Review</div>
+                            <div class="agenda-day">
+                                <div class="agenda-date">
+                                    <div class="agenda-date-text">07/07</div>
+                                    <div class="agenda-day-name">Monday</div>
+                                </div>
+                                <div class="agenda-events">
+                                    <div class="agenda-no-events">No events</div>
+                                </div>
                             </div>
-                            <div class="event-item">
-                                <div class="event-time-col">4:00 PM</div>
-                                <div class="event-title">Q3 Project Planning</div>
+                            <div class="agenda-day">
+                                <div class="agenda-date">
+                                    <div class="agenda-date-text">07/08</div>
+                                    <div class="agenda-day-name">Tuesday</div>
+                                </div>
+                                <div class="agenda-events">
+                                    <div class="agenda-event">
+                                        <div class="agenda-event-time">14:00</div>
+                                        <div class="agenda-event-title">Client Call</div>
+                                    </div>
+                                    <div class="agenda-event agenda-all-day">
+                                        <div class="agenda-event-time">All Day</div>
+                                        <div class="agenda-event-title">Deadline: Project X</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="agenda-day">
+                                <div class="agenda-date">
+                                    <div class="agenda-date-text">07/09</div>
+                                    <div class="agenda-day-name">Wednesday</div>
+                                </div>
+                                <div class="agenda-events">
+                                    <div class="agenda-no-events">No events</div>
+                                </div>
                             </div>
                         {% endif %}
                     </div>
