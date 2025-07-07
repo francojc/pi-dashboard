@@ -442,7 +442,7 @@ body {
 
 .traffic-map-container {
   width: 100%;
-  height: 200px;
+  aspect-ratio: 1;
   border-radius: 8px;
   overflow: hidden;
   background: rgba(100, 255, 218, 0.05);
@@ -453,6 +453,63 @@ body {
   height: 100%;
   border: none;
   display: block;
+  border-radius: 8px;
+}
+
+/* Travel Times Section */
+.travel-times {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.travel-times-label {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.travel-time-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: rgba(100, 255, 218, 0.05);
+  border-radius: 6px;
+  border-left: 3px solid var(--text-accent);
+}
+
+.travel-time-item:last-child {
+  margin-bottom: 0;
+}
+
+.destination-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.destination-name {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.traffic-status {
+  font-size: 0.7em;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.travel-duration {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-accent);
+  text-align: right;
+  min-width: 60px;
 }
 
 /* Calendar Card */

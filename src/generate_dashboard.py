@@ -358,6 +358,152 @@ class GoogleCalendarService:
             return []
 
 
+class MapboxService:
+    """Service for Mapbox API interactions for traffic maps and travel times"""
+    
+    def __init__(self, config: Dict, api_key: str):
+        """Initialize Mapbox service with configuration and API key"""
+        self.config = config
+        self.api_key = api_key
+        self.base_url = "https://api.mapbox.com"
+        self._cache = {}
+        self._cache_time = None
+        self.cache_duration = 300  # 5 minutes cache
+        
+    def get_map_url(self, width: int = 300, height: int = 300) -> str:
+        """Generate Mapbox static image URL with traffic overlay"""
+        try:
+            center_lat = self.config.get('center_lat', 36.0999)
+            center_lng = self.config.get('center_lng', -80.2442)
+            zoom = self.config.get('zoom', 12)
+            
+            # Mapbox Static Images API URL with traffic overlay
+            url = (f"{self.base_url}/styles/v1/mapbox/streets-v11/static/"
+                  f"{center_lng},{center_lat},{zoom}/{width}x{height}@2x"
+                  f"?access_token={self.api_key}")
+            
+            logger.debug(f"Generated Mapbox static map URL: {url[:100]}...")
+            return url
+            
+        except Exception as e:
+            logger.error(f"Failed to generate Mapbox map URL: {e}")
+            return ""
+    
+    def get_travel_times(self, destinations: List[Dict]) -> List[Dict]:
+        """Get travel times to destinations using Mapbox Matrix API"""
+        try:
+            # Check cache first
+            if self._is_cache_valid():
+                logger.debug("Using cached travel times")
+                return self._cache.get('travel_times', [])
+            
+            if not destinations:
+                return []
+                
+            home_location = self.config.get('home_location', {})
+            home_lat = home_location.get('lat', 36.0999)
+            home_lng = home_location.get('lng', -80.2442)
+            
+            # Build coordinates string: origin;destination1;destination2
+            coordinates = f"{home_lng},{home_lat}"
+            for dest in destinations:
+                coordinates += f";{dest['lng']},{dest['lat']}"
+            
+            # Mapbox Matrix API for travel times with traffic
+            matrix_url = (f"{self.base_url}/directions-matrix/v1/mapbox/driving-traffic/"
+                         f"{coordinates}")
+            
+            params = {
+                'access_token': self.api_key,
+                'sources': '0',  # Origin (home) index
+                'destinations': ';'.join(str(i+1) for i in range(len(destinations))),
+                'annotations': 'duration'
+            }
+            
+            logger.debug(f"Requesting travel times from Mapbox Matrix API")
+            response = requests.get(matrix_url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if 'durations' not in data or not data['durations']:
+                logger.warning("No duration data in Mapbox response")
+                return []
+            
+            # Process travel times
+            travel_times = []
+            durations = data['durations'][0]  # First row (from origin)
+            
+            for i, dest in enumerate(destinations):
+                if i < len(durations) and durations[i] is not None:
+                    duration_seconds = durations[i]
+                    duration_minutes = round(duration_seconds / 60)
+                    
+                    # Determine traffic status based on duration
+                    traffic_status = self._determine_traffic_status(duration_minutes)
+                    
+                    travel_times.append({
+                        'destination': dest['name'],
+                        'duration_minutes': duration_minutes,
+                        'duration_text': f"{duration_minutes} min",
+                        'traffic_status': traffic_status
+                    })
+                else:
+                    travel_times.append({
+                        'destination': dest['name'],
+                        'duration_minutes': 0,
+                        'duration_text': "N/A",
+                        'traffic_status': "No data"
+                    })
+            
+            # Cache results
+            self._cache['travel_times'] = travel_times
+            self._cache_time = datetime.now()
+            
+            logger.info(f"Retrieved travel times for {len(travel_times)} destinations")
+            return travel_times
+            
+        except requests.RequestException as e:
+            logger.error(f"Mapbox API request failed: {e}")
+            return self._get_cached_or_fallback()
+        except Exception as e:
+            logger.error(f"Failed to get travel times: {e}")
+            return self._get_cached_or_fallback()
+    
+    def _determine_traffic_status(self, duration_minutes: int) -> str:
+        """Determine traffic status based on duration"""
+        if duration_minutes <= 10:
+            return "Light traffic"
+        elif duration_minutes <= 20:
+            return "Moderate traffic"
+        elif duration_minutes <= 30:
+            return "Heavy traffic"
+        else:
+            return "Severe traffic"
+    
+    def _is_cache_valid(self) -> bool:
+        """Check if cached data is still valid"""
+        if self._cache_time is None:
+            return False
+        return (datetime.now() - self._cache_time).seconds < self.cache_duration
+    
+    def _get_cached_or_fallback(self) -> List[Dict]:
+        """Return cached data if available, otherwise return fallback"""
+        if 'travel_times' in self._cache:
+            logger.info("Using cached travel times due to API failure")
+            return self._cache['travel_times']
+        
+        logger.warning("No cached data available, returning fallback")
+        return [
+            {
+                'destination': 'Destination',
+                'duration_minutes': 0,
+                'duration_text': "No data",
+                'traffic_status': "Service unavailable"
+            }
+        ]
+
+
 class DashboardGenerator:
     """Main dashboard generator class"""
 
@@ -385,6 +531,18 @@ class DashboardGenerator:
                 self.calendar_service = GoogleCalendarService()
             except Exception as e:
                 logger.warning(f"Failed to initialize Google Calendar service: {e}")
+        
+        # Initialize Mapbox service for traffic and travel times
+        self.mapbox_service = None
+        mapbox_api_key = os.getenv('MAPBOX_API_KEY')
+        if mapbox_api_key:
+            try:
+                self.mapbox_service = MapboxService(self.config.get('traffic', {}), mapbox_api_key)
+                logger.info("Mapbox service initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Mapbox service: {e}")
+        else:
+            logger.warning("MAPBOX_API_KEY not found - traffic features will be limited")
 
     def _load_config(self, config_path: str) -> dict:
         """Load configuration from JSON file"""
@@ -1281,6 +1439,48 @@ class DashboardGenerator:
         except Exception as e:
             logger.error(f"Failed to copy static files: {e}")
 
+    def fetch_traffic_data(self) -> Dict:
+        """Fetch traffic map and travel times data"""
+        try:
+            if not self.mapbox_service:
+                logger.warning("Mapbox service not available, using fallback traffic data")
+                return self._get_fallback_traffic_data()
+            
+            traffic_config = self.config.get('traffic', {})
+            destinations = traffic_config.get('destinations', [])
+            
+            # Get map URL and travel times
+            map_url = self.mapbox_service.get_map_url()
+            travel_times = self.mapbox_service.get_travel_times(destinations)
+            
+            return {
+                'map_url': map_url,
+                'travel_times': travel_times,
+                'service': 'mapbox'
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch traffic data: {e}")
+            return self._get_fallback_traffic_data()
+    
+    def _get_fallback_traffic_data(self) -> Dict:
+        """Get fallback traffic data when Mapbox is unavailable"""
+        # Use existing traffic_map config for fallback
+        traffic_map = self.config.get('traffic_map', {
+            'center_lat': 36.0999,
+            'center_lng': -80.2442,
+            'zoom': 12,
+            'map_type': 'roadmap',
+            'show_traffic': True
+        })
+        
+        return {
+            'map_url': '',  # Will trigger Google Maps fallback in template
+            'travel_times': [],
+            'service': 'fallback',
+            'traffic_map': traffic_map
+        }
+
     def generate_dashboard(self):
         """Generate the dashboard HTML"""
         try:
@@ -1311,6 +1511,9 @@ class DashboardGenerator:
 
             # Air quality data (real or mock)
             air_quality = self.fetch_air_quality()
+            
+            # Traffic data (map and travel times)
+            traffic_data = self.fetch_traffic_data()
             
             # Traffic map configuration
             traffic_map = self.config.get('traffic_map', {
@@ -1402,7 +1605,10 @@ class DashboardGenerator:
                 'cache_buster': int(now.timestamp()),
                 'config': self.config.get('display', {}),
                 'air_quality': air_quality,
-                'traffic_map': traffic_map,
+                'traffic_map': traffic_data.get('traffic_map', traffic_map),
+                'traffic_data': traffic_data,
+                'mapbox_map_url': traffic_data.get('map_url', ''),
+                'travel_times': traffic_data.get('travel_times', []),
                 'google_maps_api_key': os.getenv('GOOGLE_MAPS_API_KEY'),
                 'sun_position': sun_position,
                 'upcoming_events': upcoming_events,

@@ -381,18 +381,42 @@
                     <div class="traffic-section">
                         <div class="traffic-label">Traffic Conditions</div>
                         <div class="traffic-map-container">
-                            {% if google_maps_api_key %}
+                            {% if mapbox_map_url %}
+                            <!-- Mapbox static image with traffic -->
+                            <img class="traffic-map" 
+                                 src="{{ mapbox_map_url }}"
+                                 alt="Traffic Map"
+                                 loading="lazy">
+                            {% elif google_maps_api_key %}
+                            <!-- Google Maps fallback -->
                             <iframe class="traffic-map" 
                                     src="https://www.google.com/maps/embed/v1/view?key={{ google_maps_api_key }}&center={{ traffic_map.center_lat }},{{ traffic_map.center_lng }}&zoom={{ traffic_map.zoom }}&maptype={{ traffic_map.map_type }}&traffic"
                                     allowfullscreen>
                             </iframe>
                             {% else %}
+                            <!-- Basic fallback -->
                             <iframe class="traffic-map" 
                                     src="https://www.google.com/maps?q={{ traffic_map.center_lat }},{{ traffic_map.center_lng }}&z={{ traffic_map.zoom }}&t=m&layer=t&output=embed"
                                     allowfullscreen>
                             </iframe>
                             {% endif %}
                         </div>
+                        
+                        <!-- Travel Times Section -->
+                        {% if travel_times and travel_times|length > 0 %}
+                        <div class="travel-times">
+                            <div class="travel-times-label">Travel Times</div>
+                            {% for travel_time in travel_times %}
+                            <div class="travel-time-item">
+                                <div class="destination-info">
+                                    <span class="destination-name">{{ travel_time.destination }}</span>
+                                    <span class="traffic-status">{{ travel_time.traffic_status }}</span>
+                                </div>
+                                <div class="travel-duration">{{ travel_time.duration_text }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
