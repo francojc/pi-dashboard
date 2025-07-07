@@ -666,56 +666,51 @@ class DashboardGenerator:
 
             lat, lon = geo_data[0]['lat'], geo_data[0]['lon']
 
-            # Use One Call API 3.0 for weather data with alerts
-            url = "https://api.openweathermap.org/data/3.0/onecall"
+            # Use free current weather API instead of One Call API (which requires subscription)
+            url = "https://api.openweathermap.org/data/2.5/weather"
             params = {
                 'lat': lat,
                 'lon': lon,
                 'appid': config['api_key'],
-                'units': config.get('units', os.getenv('WEATHER_UNITS', 'imperial')),
-                'exclude': 'minutely,hourly'  # Only get current, daily, and alerts
+                'units': config.get('units', os.getenv('WEATHER_UNITS', 'imperial'))
             }
 
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
 
-            current = data['current']
+            current = data['main']
 
             # Convert wind speed based on units
+            wind_data = data.get('wind', {})
+            wind_speed = round(wind_data.get('speed', 0))
             units = config.get('units', os.getenv('WEATHER_UNITS', 'imperial'))
             if units == 'imperial':
-                wind_speed = round(current['wind_speed'], 1)  # mph
                 wind_unit = 'mph'
+            elif units == 'metric':
+                wind_unit = 'km/h'  
             else:
-                wind_speed = round(current['wind_speed'] * 3.6, 1)  # Convert m/s to km/h
-                wind_unit = 'km/h'
+                wind_unit = 'm/s'
 
-            # Process alerts if they exist
+            # No alerts available in free current weather API
             alerts = []
-            if 'alerts' in data:
-                for alert in data['alerts']:
-                    alerts.append({
-                        'sender_name': alert.get('sender_name', 'Weather Service'),
-                        'event': alert.get('event', 'Weather Alert'),
-                        'start': datetime.fromtimestamp(alert['start']).strftime('%m/%d %H:%M'),
-                        'end': datetime.fromtimestamp(alert['end']).strftime('%m/%d %H:%M'),
-                        'description': alert.get('description', ''),
-                        'tags': alert.get('tags', [])
-                    })
+
+            # Get hourly forecast from the free 5-day/3-hour forecast API
+            hourly_forecast = self._fetch_hourly_from_forecast()
 
             return {
                 'temp': round(current['temp']),
                 'feels_like': round(current['feels_like']),
-                'description': current['weather'][0]['description'].title(),
-                'icon': current['weather'][0]['icon'],
+                'description': data['weather'][0]['description'].title(),
+                'icon': data['weather'][0]['icon'],
                 'humidity': current['humidity'],
                 'wind_speed': wind_speed,
                 'wind_unit': wind_unit,
-                'sunrise': datetime.fromtimestamp(current['sunrise']).strftime('%H:%M'),
-                'sunset': datetime.fromtimestamp(current['sunset']).strftime('%H:%M'),
-                'uv_index': round(current.get('uvi', 0)),
-                'alerts': alerts
+                'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M'),
+                'sunset': datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M'),
+                'uv_index': self._calculate_mock_uv_index(),
+                'alerts': alerts,
+                'hourly_forecast': hourly_forecast
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Weather fetch failed: {e}")
@@ -762,10 +757,100 @@ class DashboardGenerator:
                 'sunrise': datetime.fromtimestamp(data['sys']['sunrise']).strftime('%H:%M'),
                 'sunset': datetime.fromtimestamp(data['sys']['sunset']).strftime('%H:%M'),
                 'uv_index': self._calculate_mock_uv_index(),
-                'alerts': []  # No alerts in fallback
+                'alerts': [],  # No alerts in fallback
+                'hourly_forecast': None  # No hourly data in fallback
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Fallback weather fetch failed: {e}")
+            return None
+
+    def _process_hourly_data(self, data: dict) -> Optional[List[Dict]]:
+        """
+        Processes the hourly forecast data from the One Call API response.
+        Returns a list of dictionaries, each representing an hour's forecast.
+        """
+        from datetime import datetime, timezone, timedelta
+        
+        if "hourly" not in data or "timezone_offset" not in data:
+            logger.info("Hourly forecast data not available in API response.")
+            return None
+
+        hourly_forecast = []
+        local_tz = timezone(timedelta(seconds=data['timezone_offset']))
+
+        for hour_data in data["hourly"]:
+            # The 'weather' key contains a list; the primary weather is the first item.
+            weather_info = hour_data['weather'][0] if hour_data.get('weather') else {}
+
+            # Convert UTC timestamp ('dt') to local time using the provided offset.
+            dt_object = datetime.fromtimestamp(hour_data['dt'], tz=local_tz)
+
+            # The API provides 'pop' as a float from 0.0 to 1.0. Convert to a percentage.
+            pop_percentage = int(hour_data.get('pop', 0) * 100)
+
+            hourly_forecast.append({
+                'time': dt_object.strftime('%-I %p').strip(),
+                'temp': int(round(hour_data['temp'])),
+                'humidity': hour_data['humidity'],
+                'wind_speed': int(round(hour_data['wind_speed'])),
+                'pop': pop_percentage,
+                'description': weather_info.get('description', 'N/A').title(),
+                'icon': weather_info.get('icon', '01d')  # Default to a 'clear sky' icon
+            })
+            
+        return hourly_forecast
+
+    def _fetch_hourly_from_forecast(self) -> Optional[List[Dict]]:
+        """
+        Fetch pseudo-hourly data from the free 5-day/3-hour forecast API.
+        Returns data every 3 hours, which we'll present as "hourly" data.
+        """
+        try:
+            config = self.config.get('weather', {})
+            if not config.get('api_key'):
+                return None
+
+            url = "https://api.openweathermap.org/data/2.5/forecast"
+            params = {
+                'q': config.get('location', os.getenv('WEATHER_LOCATION', 'Winston-Salem,NC,US')),
+                'appid': config['api_key'],
+                'units': config.get('units', os.getenv('WEATHER_UNITS', 'imperial'))
+            }
+
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            hourly_forecast = []
+            
+            # Take first 8 items (24 hours worth of 3-hour intervals)
+            for item in data['list'][:8]:
+                # Convert UTC timestamp to local time
+                dt_object = datetime.fromtimestamp(item['dt'])
+                
+                # Get weather info
+                weather_info = item['weather'][0] if item.get('weather') else {}
+                
+                # Convert pop (probability of precipitation) to percentage
+                pop_percentage = int(item.get('pop', 0) * 100)
+                
+                hourly_forecast.append({
+                    'time': dt_object.strftime('%-I %p').strip(),
+                    'temp': int(round(item['main']['temp'])),
+                    'humidity': item['main']['humidity'],
+                    'wind_speed': int(round(item.get('wind', {}).get('speed', 0))),
+                    'pop': pop_percentage,
+                    'description': weather_info.get('description', 'N/A').title(),
+                    'icon': weather_info.get('icon', '01d')
+                })
+            
+            return hourly_forecast
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Hourly forecast fetch failed: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error fetching hourly forecast: {e}")
             return None
 
     def fetch_air_quality(self) -> Dict:

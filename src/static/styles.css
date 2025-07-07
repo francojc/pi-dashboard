@@ -303,6 +303,152 @@ body {
   margin-left: 8px;
 }
 
+/* Hourly Weather Chart Card */
+.hourly-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.chart-area {
+  position: relative;
+  height: 180px;
+  padding: 10px 0;
+  margin: 0 20px;
+}
+
+/* Rain Probability Bars (Background) */
+.rain-bars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 20px 0;
+}
+
+.rain-bar {
+  flex: 1;
+  background: linear-gradient(to top, rgba(30, 144, 255, 0.3), rgba(30, 144, 255, 0.1));
+  border-radius: 2px 2px 0 0;
+  min-height: 5px;
+  transition: opacity 0.3s ease;
+}
+
+.rain-bar:hover {
+  opacity: 0.8;
+}
+
+/* Temperature Line Chart (SVG Overlay) */
+.temp-line-chart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.temp-line-chart polyline {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.temp-line-chart circle {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  transition: r 0.2s ease;
+}
+
+.temp-line-chart circle:hover {
+  r: 6;
+}
+
+/* X-Axis Labels and Data */
+.chart-x-axis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.x-axis-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  text-align: center;
+}
+
+.axis-time {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: var(--text-accent);
+}
+
+.axis-icon .weather-icon-small {
+  width: 2em;
+  height: 2em;
+}
+
+.axis-icon .weather-emoji {
+  font-size: 1.5em;
+}
+
+.axis-temp {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.axis-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.7em;
+  color: var(--text-secondary);
+}
+
+.axis-details .wind:before {
+  content: "💨 ";
+}
+
+.axis-details .humidity:before {
+  content: "💧 ";
+}
+
+/* No data state */
+.hourly-chart-card .no-data {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 40px 20px;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .chart-area {
+    height: 140px;
+    margin: 0 10px;
+  }
+  
+  .chart-x-axis {
+    padding: 0 10px;
+  }
+  
+  .axis-details {
+    font-size: 0.65em;
+  }
+  
+  .axis-icon .weather-icon-small {
+    width: 1.5em;
+    height: 1.5em;
+  }
+}
+
 /* Local Info Card */
 .local-info-card {
   display: flex;

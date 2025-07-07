@@ -254,6 +254,83 @@
 
             <!-- Right Column - Weather Related Cards -->
             <div class="right-column">
+                <!-- Hourly Forecast Chart Card -->
+                <div class="card hourly-chart-card">
+                    <h2 class="card-title">Today's Weather Trends</h2>
+                    {% if weather and weather.hourly_forecast %}
+                    <div class="hourly-chart-container">
+                        <!-- Chart Area -->
+                        <div class="chart-area">
+                            <!-- Rain Probability Bars (Background) -->
+                            <div class="rain-bars">
+                                {% for hour in weather.hourly_forecast %}
+                                <div class="rain-bar" style="height: {{ hour.pop }}%" title="Rain: {{ hour.pop }}%"></div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Temperature Line Chart (SVG Overlay) -->
+                            <svg class="temp-line-chart" viewBox="0 0 800 200" preserveAspectRatio="none">
+                                {% set temp_values = weather.hourly_forecast | map(attribute='temp') | list %}
+                                {% set min_temp = temp_values | min %}
+                                {% set max_temp = temp_values | max %}
+                                {% set temp_range = max_temp - min_temp if max_temp != min_temp else 10 %}
+                                
+                                <!-- Generate SVG polyline points -->
+                                {% set ns = namespace(points=[]) %}
+                                {% for hour in weather.hourly_forecast %}
+                                    {% set x = (loop.index0 * (800 / (weather.hourly_forecast|length - 1))) | round %}
+                                    {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
+                                    {% set _ = ns.points.append(x ~ ',' ~ y) %}
+                                {% endfor %}
+                                
+                                <polyline points="{{ ns.points | join(' ') }}" 
+                                         fill="none" 
+                                         stroke="var(--text-accent)" 
+                                         stroke-width="3"
+                                         stroke-linecap="round"
+                                         stroke-linejoin="round"/>
+                                
+                                <!-- Temperature data points -->
+                                {% for hour in weather.hourly_forecast %}
+                                    {% set x = (loop.index0 * (800 / (weather.hourly_forecast|length - 1))) | round %}
+                                    {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
+                                    <circle cx="{{ x }}" cy="{{ y }}" r="4" 
+                                           fill="var(--text-accent)" 
+                                           stroke="var(--bg-dark)" 
+                                           stroke-width="2"/>
+                                {% endfor %}
+                            </svg>
+                        </div>
+                        
+                        <!-- X-Axis Labels and Data -->
+                        <div class="chart-x-axis">
+                            {% for hour in weather.hourly_forecast %}
+                            <div class="x-axis-item">
+                                <div class="axis-time">{{ hour.time }}</div>
+                                <div class="axis-icon">
+                                    {% if hour.icon %}
+                                    <img src="https://openweathermap.org/img/wn/{{ hour.icon }}.png"
+                                         alt="{{ hour.description }}" class="weather-icon-small">
+                                    {% else %}
+                                    <span class="weather-emoji">☀️</span>
+                                    {% endif %}
+                                </div>
+                                <div class="axis-temp">{{ hour.temp }}°</div>
+                                <div class="axis-details">
+                                    <span class="wind">{{ hour.wind_speed }}mph</span>
+                                    <span class="humidity">{{ hour.humidity }}%</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="hourly-chart-container">
+                        <p class="no-data">Hourly forecast not available</p>
+                    </div>
+                    {% endif %}
+                </div>
+
                 <!-- 5-Day Forecast Card -->
                 <div class="card forecast-card">
                     <h2 class="card-title">5-Day Outlook</h2>
