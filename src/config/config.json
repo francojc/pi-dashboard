@@ -44,10 +44,11 @@
     "show_seconds": false
   },
   "traffic_map": {
-    "center_lat": 36.0999,
-    "center_lng": -80.2442,
+    "center_lat": 36.11070732418548,
+    "center_lng": -80.2648843210247,
     "zoom": 12,
     "map_type": "roadmap",
+    "map_style": "dark-v10",
     "show_traffic": true
   },
   "traffic": {
@@ -55,6 +56,7 @@
     "center_lat": 36.133269983139876,
     "center_lng": -80.27593704795439,
     "zoom": 11,
+    "map_style": "dark-v10",
     "destinations": [
       {
         "name": "RJR High",

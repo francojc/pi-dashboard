@@ -373,12 +373,13 @@ class MapboxService:
     def get_map_url(self, width: int = 300, height: int = 300) -> str:
         """Generate Mapbox static image URL with traffic overlay"""
         try:
-            center_lat = self.config.get('center_lat', 36.0999)
-            center_lng = self.config.get('center_lng', -80.2442)
-            zoom = self.config.get('zoom', 12)
+            center_lat = self.config.get('center_lat', 36.133269983139876)
+            center_lng = self.config.get('center_lng', -80.27593704795439)
+            zoom = self.config.get('zoom', 11)
+            map_style = self.config.get('map_style', 'streets-v11')
             
             # Mapbox Static Images API URL with traffic overlay
-            url = (f"{self.base_url}/styles/v1/mapbox/streets-v11/static/"
+            url = (f"{self.base_url}/styles/v1/mapbox/{map_style}/static/"
                   f"{center_lng},{center_lat},{zoom}/{width}x{height}@2x"
                   f"?access_token={self.api_key}")
             
@@ -401,8 +402,8 @@ class MapboxService:
                 return []
                 
             home_location = self.config.get('home_location', {})
-            home_lat = home_location.get('lat', 36.0999)
-            home_lng = home_location.get('lng', -80.2442)
+            home_lat = home_location.get('lat', 36.133269983139876)
+            home_lng = home_location.get('lng', -80.27593704795439)
             
             # Build coordinates string: origin;destination1;destination2
             coordinates = f"{home_lng},{home_lat}"
@@ -1467,8 +1468,8 @@ class DashboardGenerator:
         """Get fallback traffic data when Mapbox is unavailable"""
         # Use existing traffic_map config for fallback
         traffic_map = self.config.get('traffic_map', {
-            'center_lat': 36.0999,
-            'center_lng': -80.2442,
+            'center_lat': 36.133269983139876,
+            'center_lng': -80.27593704795439,
             'zoom': 12,
             'map_type': 'roadmap',
             'show_traffic': True
@@ -1517,8 +1518,8 @@ class DashboardGenerator:
             
             # Traffic map configuration
             traffic_map = self.config.get('traffic_map', {
-                'center_lat': 36.0999,
-                'center_lng': -80.2442,
+                'center_lat': 36.133269983139876,
+                'center_lng': -80.27593704795439,
                 'zoom': 12,
                 'map_type': 'roadmap',
                 'show_traffic': True
