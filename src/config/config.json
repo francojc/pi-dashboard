@@ -14,8 +14,28 @@
   },
   "calendar": {
     "use_mock_data": false,
-    "calendar_id": "primary",
-    "max_events": 5,
+    "calendars": {
+      "work": {
+        "id": "francojc@wfu.edu",
+        "name": "Work",
+        "color": "#4285F4",
+        "enabled": true
+      },
+      "personal": {
+        "id": "jerid.francom@gmail.com",
+        "name": "Personal",
+        "color": "#DB4437",
+        "enabled": true
+      },
+      "spanish": {
+        "id": "wfu.edu_27uakldtgi42knb0bbcs50flgk@group.calendar.google.com",
+        "name": "Spanish Dept",
+        "color": "#F4B400",
+        "enabled": true
+      }
+    },
+    "max_events_per_calendar": 5,
+    "max_events_total": 15,
     "timezone": "America/New_York"
   },
   "display": {

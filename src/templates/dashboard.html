@@ -168,19 +168,24 @@
                                 <div class="agenda-events">
                                     {% if day.events and day.events|length > 0 %}
                                         {% for event in day.events %}
-                                        <div class="agenda-event {% if event.type == 'all_day' %}agenda-all-day{% endif %}">
-                                            <div class="agenda-event-time">
-                                                {% if event.start == 'All Day' or event.type == 'all_day' %}
-                                                    All Day
-                                                {% else %}
-                                                    {% if event.end and event.end != event.start %}
-                                                        {{ event.start }}-{{ event.end }}
+                                        <div class="agenda-event {% if event.type == 'all_day' %}agenda-all-day{% endif %}" 
+                                             style="border-left-color: {{ event.calendar_color | default('#4285F4') }};">
+                                            <div class="agenda-event-indicator" style="background-color: {{ event.calendar_color | default('#4285F4') }};"></div>
+                                            <div class="agenda-event-content">
+                                                <div class="agenda-event-time">
+                                                    {% if event.start == 'All Day' or event.type == 'all_day' %}
+                                                        All Day
                                                     {% else %}
-                                                        {{ event.start }}
+                                                        {% if event.end and event.end != event.start %}
+                                                            {{ event.start }}-{{ event.end }}
+                                                        {% else %}
+                                                            {{ event.start }}
+                                                        {% endif %}
                                                     {% endif %}
-                                                {% endif %}
+                                                </div>
+                                                <div class="agenda-event-title">{{ event.summary }}</div>
+                                                <div class="agenda-event-calendar">{{ event.calendar_name | default('Calendar') }}</div>
                                             </div>
-                                            <div class="agenda-event-title">{{ event.summary }}</div>
                                         </div>
                                         {% endfor %}
                                     {% else %}

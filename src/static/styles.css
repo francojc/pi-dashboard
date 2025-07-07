@@ -11,6 +11,8 @@
   --text-primary: #ffffff;
   --text-secondary: #8892b0;
   --text-accent: #64ffda;
+  /* yellow complementary */
+  --text-highlight: #f39c12;
 
   /* Effects (lightweight) */
   --glass-border: 1px solid rgba(100, 255, 218, 0.1);
@@ -543,7 +545,7 @@ body {
 }
 
 .mini-day.today {
-  background: var(--text-accent);
+  background: var(--text-highlight);
   color: var(--bg-dark);
   font-weight: 600;
 }
@@ -815,4 +817,58 @@ body {
   .ticker-label {
     border: 1px solid currentColor;
   }
+}
+
+/* Multi-Calendar Support Styles */
+.agenda-event {
+  border-left: 3px solid #4285F4; /* Default color, will be overridden by inline styles */
+  position: relative;
+  padding-left: 16px;
+}
+
+.agenda-event-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #4285F4; /* Default color, will be overridden by inline styles */
+}
+
+.agenda-event-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agenda-event-calendar {
+  font-size: 0.7em;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Calendar color variables for common calendar types */
+.calendar-personal {
+  border-left-color: #4285F4;
+}
+
+.calendar-work {
+  border-left-color: #0F9D58;
+}
+
+.calendar-family {
+  border-left-color: #EA4335;
+}
+
+.calendar-holidays {
+  border-left-color: #9C27B0;
+}
+
+.calendar-birthdays {
+  border-left-color: #FF9800;
 }

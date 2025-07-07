@@ -120,7 +120,7 @@ class GoogleCalendarService:
                 logger.error(f"Failed to build calendar service: {e}")
                 self.service = None
 
-    def get_events(self, calendar_id='primary', max_results=20) -> List[Dict]:
+    def get_events(self, calendar_id='primary', max_results=20, calendar_name=None, calendar_color=None) -> List[Dict]:
         """Fetch upcoming events from Google Calendar (start of today through next 7 days)"""
         if not self.service:
             logger.debug("Google Calendar not configured - returning empty events list")
@@ -164,7 +164,10 @@ class GoogleCalendarService:
                     'start': start_time,
                     'end': end_time,
                     'location': event.get('location', ''),
-                    'description': event.get('description', '')
+                    'description': event.get('description', ''),
+                    'calendar_name': calendar_name or 'Calendar',
+                    'calendar_color': calendar_color or '#4285F4',
+                    'calendar_id': calendar_id
                 })
 
             logger.info(f"Successfully fetched {len(formatted_events)} calendar events")
@@ -174,7 +177,7 @@ class GoogleCalendarService:
             logger.error(f"Failed to fetch calendar events: {e}")
             return []
 
-    def get_week_events(self, calendar_id='primary') -> Dict[str, Dict]:
+    def get_week_events(self, calendar_id='primary', calendar_name=None, calendar_color=None) -> Dict[str, Dict]:
         """Fetch events for current week (Monday-Sunday)"""
         if not self.service:
             logger.error("Calendar service not authenticated")
@@ -235,7 +238,10 @@ class GoogleCalendarService:
                         'start': start_dt.strftime('%H:%M'),
                         'end': end_dt.strftime('%H:%M'),
                         'location': event.get('location', ''),
-                        'type': 'timed'
+                        'type': 'timed',
+                        'calendar_name': calendar_name or 'Calendar',
+                        'calendar_color': calendar_color or '#4285F4',
+                        'calendar_id': calendar_id
                     }
 
                     date_key = event_date.strftime('%Y-%m-%d')
@@ -248,7 +254,10 @@ class GoogleCalendarService:
                     event_data = {
                         'summary': event.get('summary', 'Untitled Event'),
                         'location': event.get('location', ''),
-                        'type': 'all_day'
+                        'type': 'all_day',
+                        'calendar_name': calendar_name or 'Calendar',
+                        'calendar_color': calendar_color or '#4285F4',
+                        'calendar_id': calendar_id
                     }
 
                     date_key = event_date.strftime('%Y-%m-%d')
@@ -878,14 +887,61 @@ class DashboardGenerator:
         # Use real Google Calendar if configured
         if not calendar_config.get('use_mock_data', True) and self.calendar_service:
             try:
-                calendar_id = calendar_config.get('calendar_id', 'primary')
-                max_events = calendar_config.get('max_events', 5)
-                events = self.calendar_service.get_events(calendar_id, max_events)
+                all_events = []
+                
+                # Handle both new multi-calendar config and legacy single calendar
+                calendars = calendar_config.get('calendars', {})
+                
+                # Legacy fallback - convert old calendar_id to new format
+                if not calendars and 'calendar_id' in calendar_config:
+                    calendars = {
+                        'primary': {
+                            'id': calendar_config['calendar_id'],
+                            'name': 'Calendar',
+                            'color': '#4285F4',
+                            'enabled': True
+                        }
+                    }
+                elif not calendars and '_legacy_calendar_id' in calendar_config:
+                    calendars = {
+                        'primary': {
+                            'id': calendar_config['_legacy_calendar_id'],
+                            'name': 'Calendar', 
+                            'color': '#4285F4',
+                            'enabled': True
+                        }
+                    }
+
+                max_events_per_calendar = calendar_config.get('max_events_per_calendar', calendar_config.get('max_events', 5))
+                max_events_total = calendar_config.get('max_events_total', 15)
+
+                # Fetch events from each enabled calendar
+                for cal_key, cal_info in calendars.items():
+                    if not cal_info.get('enabled', True):
+                        continue
+                    
+                    try:
+                        cal_events = self.calendar_service.get_events(
+                            calendar_id=cal_info['id'],
+                            max_results=max_events_per_calendar,
+                            calendar_name=cal_info.get('name', cal_key),
+                            calendar_color=cal_info.get('color', '#4285F4')
+                        )
+                        all_events.extend(cal_events)
+                        logger.info(f"Fetched {len(cal_events)} events from calendar '{cal_info.get('name', cal_key)}'")
+                    except Exception as e:
+                        logger.error(f"Failed to fetch events from calendar '{cal_info.get('name', cal_key)}': {e}")
+
+                # Sort all events by start time and limit total
+                all_events.sort(key=lambda x: (x.get('start', ''), x.get('summary', '')))
+                all_events = all_events[:max_events_total]
+
                 # Cache successful results for fallback
-                if events:
-                    self._save_calendar_cache(events)
-                logger.info(f"Fetched {len(events)} events from Google Calendar")
-                return events
+                if all_events:
+                    self._save_calendar_cache(all_events)
+                logger.info(f"Total fetched events: {len(all_events)} from {len([c for c in calendars.values() if c.get('enabled', True)])} calendars")
+                return all_events
+                
             except Exception as e:
                 logger.error(f"Failed to fetch Google Calendar events: {e}")
                 # Try to load from cache as fallback
@@ -898,9 +954,9 @@ class DashboardGenerator:
         # Return mock data as fallback
         logger.info("Using mock calendar data")
         return [
-            {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30'},
-            {'summary': 'Project Review', 'start': '14:00', 'end': '15:00'},
-            {'summary': 'Client Call', 'start': '16:00', 'end': '17:00'}
+            {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
+            {'summary': 'Project Review', 'start': '14:00', 'end': '15:00', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
+            {'summary': 'Client Call', 'start': '16:00', 'end': '17:00', 'calendar_name': 'Personal', 'calendar_color': '#4285F4'}
         ]
 
     def fetch_agenda_events(self) -> List[Dict]:
@@ -910,10 +966,139 @@ class DashboardGenerator:
         # Use real Google Calendar if configured
         if not calendar_config.get('use_mock_data', True) and self.calendar_service:
             try:
-                calendar_id = calendar_config.get('calendar_id', 'primary')
-                agenda_events = self.calendar_service.get_agenda_events(calendar_id)
-                logger.info("Fetched agenda events from Google Calendar")
-                return agenda_events
+                # Handle both new multi-calendar config and legacy single calendar
+                calendars = calendar_config.get('calendars', {})
+                
+                # Legacy fallback
+                if not calendars and 'calendar_id' in calendar_config:
+                    calendars = {
+                        'primary': {
+                            'id': calendar_config['calendar_id'],
+                            'name': 'Calendar',
+                            'color': '#4285F4',
+                            'enabled': True
+                        }
+                    }
+                elif not calendars and '_legacy_calendar_id' in calendar_config:
+                    calendars = {
+                        'primary': {
+                            'id': calendar_config['_legacy_calendar_id'],
+                            'name': 'Calendar',
+                            'color': '#4285F4',
+                            'enabled': True
+                        }
+                    }
+
+                if not calendars:
+                    logger.warning("No calendars configured")
+                    return []
+
+                # Initialize agenda structure for next 5 days
+                agenda = []
+                now = datetime.now()
+                
+                for i in range(5):
+                    day = now + timedelta(days=i)
+                    day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day.weekday()]
+
+                    if i == 0:
+                        display_name = 'Today'
+                    elif i == 1:
+                        display_name = 'Tomorrow'
+                    else:
+                        display_name = day_name
+
+                    agenda_day = {
+                        'date': day.strftime('%m/%d'),
+                        'day_name': display_name,
+                        'day_abbr': day_name[:3],
+                        'is_today': i == 0,
+                        'events': []
+                    }
+                    agenda.append(agenda_day)
+
+                # Fetch events from all enabled calendars and merge into agenda structure
+                for calendar_key, calendar_config in calendars.items():
+                    if not calendar_config.get('enabled', True):
+                        continue
+                        
+                    calendar_id = calendar_config['id']
+                    calendar_name = calendar_config.get('name', 'Calendar')
+                    calendar_color = calendar_config.get('color', '#4285F4')
+                    
+                    try:
+                        # Get raw events for proper date parsing
+                        time_min = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+                        time_max = time_min + timedelta(days=5)
+                        
+                        events_result = self.calendar_service.service.events().list(
+                            calendarId=calendar_id,
+                            timeMin=time_min.isoformat() + 'Z',
+                            timeMax=time_max.isoformat() + 'Z',
+                            maxResults=calendar_config.get('max_events_per_calendar', 10),
+                            singleEvents=True,
+                            orderBy='startTime'
+                        ).execute()
+
+                        raw_events = events_result.get('items', [])
+                        logger.info(f"Fetched {len(raw_events)} agenda events from calendar '{calendar_name}'")
+
+                        # Process each raw event and place in correct agenda day
+                        for event in raw_events:
+                            start = event['start'].get('dateTime', event['start'].get('date'))
+                            end = event['end'].get('dateTime', event['end'].get('date'))
+
+                            # Determine event date and format
+                            if 'T' in start:
+                                # Timed event
+                                start_dt = datetime.fromisoformat(start.replace('Z', '+00:00'))
+                                end_dt = datetime.fromisoformat(end.replace('Z', '+00:00'))
+                                event_date = start_dt.date()
+
+                                event_data = {
+                                    'summary': event.get('summary', 'Untitled Event'),
+                                    'start': start_dt.strftime('%H:%M'),
+                                    'end': end_dt.strftime('%H:%M'),
+                                    'type': 'timed',
+                                    'calendar_name': calendar_name,
+                                    'calendar_color': calendar_color,
+                                    'calendar_id': calendar_id
+                                }
+                            else:
+                                # All-day event
+                                event_date = datetime.fromisoformat(start).date()
+
+                                event_data = {
+                                    'summary': event.get('summary', 'Untitled Event'),
+                                    'start': 'All Day',
+                                    'end': '',
+                                    'type': 'all_day',
+                                    'calendar_name': calendar_name,
+                                    'calendar_color': calendar_color,
+                                    'calendar_id': calendar_id
+                                }
+
+                            # Find the matching agenda day
+                            today = now.date()
+                            days_ahead = (event_date - today).days
+
+                            if 0 <= days_ahead < 5:
+                                agenda[days_ahead]['events'].append(event_data)
+                                
+                    except Exception as e:
+                        logger.error(f"Failed to fetch agenda events from calendar '{calendar_name}': {e}")
+                        continue
+
+                # Sort events within each day
+                for day in agenda:
+                    day['events'].sort(key=lambda x: x['start'] if x['start'] != 'All Day' else '00:00')
+
+                total_events = sum(len(day['events']) for day in agenda)
+                logger.info(f"Total agenda events processed: {total_events} from {len([c for c in calendars.values() if c.get('enabled', True)])} calendars")
+
+                logger.info("Successfully created agenda from multi-calendar events")
+                return agenda
+                
             except Exception as e:
                 logger.error(f"Failed to fetch Google Calendar agenda events: {e}")
 
@@ -970,10 +1155,60 @@ class DashboardGenerator:
         # Use real Google Calendar if configured
         if not calendar_config.get('use_mock_data', True) and self.calendar_service:
             try:
-                calendar_id = calendar_config.get('calendar_id', 'primary')
-                week_events = self.calendar_service.get_week_events(calendar_id)
-                logger.info("Fetched week events from Google Calendar")
-                return week_events
+                # Handle both new multi-calendar config and legacy single calendar
+                calendars = calendar_config.get('calendars', {})
+                
+                # Legacy fallback
+                if not calendars and 'calendar_id' in calendar_config:
+                    calendars = {
+                        'primary': {
+                            'id': calendar_config['calendar_id'],
+                            'name': 'Calendar',
+                            'color': '#4285F4',
+                            'enabled': True
+                        }
+                    }
+                elif not calendars and '_legacy_calendar_id' in calendar_config:
+                    calendars = {
+                        'primary': {
+                            'id': calendar_config['_legacy_calendar_id'],
+                            'name': 'Calendar',
+                            'color': '#4285F4',
+                            'enabled': True
+                        }
+                    }
+
+                # Initialize combined week structure
+                combined_week_events = {}
+                
+                # Fetch from each enabled calendar and merge
+                for cal_key, cal_info in calendars.items():
+                    if not cal_info.get('enabled', True):
+                        continue
+                    
+                    try:
+                        cal_week_events = self.calendar_service.get_week_events(
+                            calendar_id=cal_info['id'],
+                            calendar_name=cal_info.get('name', cal_key),
+                            calendar_color=cal_info.get('color', '#4285F4')
+                        )
+                        
+                        # Merge events into combined structure
+                        for date_key, day_data in cal_week_events.items():
+                            if date_key not in combined_week_events:
+                                combined_week_events[date_key] = day_data.copy()
+                                combined_week_events[date_key]['all_day'] = []
+                                combined_week_events[date_key]['timed'] = []
+                            
+                            combined_week_events[date_key]['all_day'].extend(day_data.get('all_day', []))
+                            combined_week_events[date_key]['timed'].extend(day_data.get('timed', []))
+                        
+                        logger.info(f"Merged week events from calendar '{cal_info.get('name', cal_key)}'")
+                    except Exception as e:
+                        logger.error(f"Failed to fetch week events from calendar '{cal_info.get('name', cal_key)}': {e}")
+
+                logger.info("Fetched week events from multiple Google Calendars")
+                return combined_week_events
             except Exception as e:
                 logger.error(f"Failed to fetch Google Calendar week events: {e}")
                 # Fall back to mock data on error
@@ -1003,16 +1238,16 @@ class DashboardGenerator:
 
         if today_key in mock_week_events:
             mock_week_events[today_key]['timed'].extend([
-                {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30', 'type': 'timed'},
-                {'summary': 'Project Review', 'start': '14:00', 'end': '15:00', 'type': 'timed'}
+                {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30', 'type': 'timed', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
+                {'summary': 'Project Review', 'start': '14:00', 'end': '15:00', 'type': 'timed', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'}
             ])
             mock_week_events[today_key]['all_day'].append(
-                {'summary': 'Holiday', 'type': 'all_day'}
+                {'summary': 'Holiday', 'type': 'all_day', 'calendar_name': 'Personal', 'calendar_color': '#4285F4'}
             )
 
         if tomorrow_key in mock_week_events:
             mock_week_events[tomorrow_key]['timed'].append(
-                {'summary': 'Client Call', 'start': '16:00', 'end': '17:00', 'type': 'timed'}
+                {'summary': 'Client Call', 'start': '16:00', 'end': '17:00', 'type': 'timed', 'calendar_name': 'Personal', 'calendar_color': '#4285F4'}
             )
 
         return mock_week_events
