@@ -403,56 +403,9 @@
                     </div>
                 </div>
 
-                <!-- Local Info Card -->
+                <!-- Travel Card -->
                 <div class="card local-info-card">
-                    <h2 class="card-title">Local Information</h2>
-
-                    <!-- Sun Arc Visualization -->
-                    <div class="sun-arc-container">
-                        <div class="sun-arc">
-                            <svg class="arc-path" viewBox="0 0 200 60">
-                                <defs>
-                                    <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
-                                        <stop offset="50%" style="stop-color:#FFD700;stop-opacity:1" />
-                                        <stop offset="100%" style="stop-color:#FF6347;stop-opacity:1" />
-                                    </linearGradient>
-                                </defs>
-                                <path class="arc-shadow" d="M 10 50 Q 100 10 190 50" />
-                                <path class="arc-line" d="M 10 50 Q 100 10 190 50" />
-                            </svg>
-                            <div class="sun-position" style="left: {{ sun_position | default('35') }}%;">☀️</div>
-                        </div>
-                        <div class="time-markers">
-                            <div class="time-marker">
-                                <span class="marker-icon">🌅</span>
-                                <span>{{ weather.sunrise | default('6:24 AM') }}</span>
-                            </div>
-                            <div class="time-marker current-time-marker">
-                                <span>{{ current_time | default('2:32 PM') }}</span>
-                            </div>
-                            <div class="time-marker">
-                                <span class="marker-icon">🌇</span>
-                                <span>{{ weather.sunset | default('8:15 PM') }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Environmental Metrics -->
-                    <div class="environmental-metrics">
-                        <div class="metric-compact">
-                            <div class="metric-icon">💨</div>
-                            <div class="metric-label">Air Quality</div>
-                            <div class="metric-value">{{ air_quality.status | default('Good') }}</div>
-                            <div class="metric-subtext">AQI {{ air_quality.aqi | default('45') }}</div>
-                        </div>
-                        <div class="metric-compact">
-                            <div class="metric-icon">☀️</div>
-                            <div class="metric-label">UV Index</div>
-                            <div class="metric-value">{{ weather.uv_index | default('6') }}</div>
-                            <div class="metric-subtext">{{ uv_level | default('High') }}</div>
-                        </div>
-                    </div>
+                    <h2 class="card-title">Travel</h2>
 
                     <!-- Traffic Map Section -->
                     <div class="traffic-section">
