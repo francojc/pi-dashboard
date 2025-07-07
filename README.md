@@ -4,16 +4,27 @@ A modern dashboard web service designed to run in Docker and be accessed by Rasp
 
 ## Features
 
+### Architecture & Performance
 - **Web Service Architecture**: Runs in Docker on powerful hardware, accessed by Pi via network
-- **Modern Card-Based Design**: Glassmorphism effects with performance optimizations
 - **Server-Side Rendering**: Static HTML generation reduces client load
-- **Enhanced Local Information**: Air quality, UV index, sun position, traffic patterns
-- **Auto-Updates**: Refreshes data every 15 minutes
-- **Real Weather Data**: Current conditions, 5-day forecast, and air quality from OpenWeatherMap
-- **Smart Calendar**: Complete month view with adjacent month days
-- **RSS Feed Support**: Dual news and events tickers with smooth animations
-- **Responsive**: Optimized for vertical/portrait displays
 - **Multiple Pi Support**: Single dashboard service can serve multiple displays
+- **Auto-Updates**: Refreshes data every 15 minutes
+
+### Design & Display
+- **Modern Card-Based Design**: Glassmorphism effects with performance optimizations
+- **Smart Calendar**: Complete month view with adjacent month days
+- **Responsive**: Optimized for vertical/portrait displays
+
+### Integrations
+- **Real Weather Data**: Current conditions, 5-day forecast, and air quality from OpenWeatherMap (free tier)
+- **RSS Feed Support**: Dual news and events tickers with smooth animations
+- **Google Calendar**: Optional OAuth 2.0 integration for calendar events
+- **Traffic Patterns**: Local traffic data for commute planning via TomTom and Mapbox APIs (free tier)
+
+### Enhanced Information
+- **Enhanced Local Information**: Air quality, UV index, sun position, traffic patterns
+
+### Security & Access
 - **Secure Remote Access**: Tailscale integration for secure remote viewing
 
 ## Architecture
