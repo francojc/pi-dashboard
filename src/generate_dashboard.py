@@ -1401,7 +1401,6 @@ class DashboardGenerator:
                 'last_updated': now.strftime('%H:%M:%S'),
                 'cache_buster': int(now.timestamp()),
                 'config': self.config.get('display', {}),
-                # v2 template specific data
                 'air_quality': air_quality,
                 'traffic_map': traffic_map,
                 'google_maps_api_key': os.getenv('GOOGLE_MAPS_API_KEY'),

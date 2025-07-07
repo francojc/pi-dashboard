@@ -19,10 +19,7 @@ A modern dashboard web service designed to run in Docker and be accessed by Rasp
 - **Real Weather Data**: Current conditions, 5-day forecast, and air quality from OpenWeatherMap (free tier)
 - **RSS Feed Support**: Dual news and events tickers with smooth animations
 - **Google Calendar**: Optional OAuth 2.0 integration for calendar events
-- **Traffic Patterns**: Local traffic data for commute planning via TomTom and Mapbox APIs (free tier)
-
-### Enhanced Information
-- **Enhanced Local Information**: Air quality, UV index, sun position, traffic patterns
+- **Traffic Patterns**: Local traffic data for commute planning
 
 ### Security & Access
 - **Secure Remote Access**: Tailscale integration for secure remote viewing
