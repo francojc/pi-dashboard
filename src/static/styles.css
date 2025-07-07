@@ -424,48 +424,34 @@ body {
   margin-top: 1px;
 }
 
-/* Traffic Section */
-.commute-section {
+/* Traffic Map Section */
+.traffic-section {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid rgba(100, 255, 218, 0.1);
 }
 
-.commute-label {
+.traffic-label {
   font-size: 0.9em;
   color: var(--text-secondary);
   margin-bottom: 10px;
   text-align: center;
 }
 
-.commute-routes {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.route {
-  flex: 1;
-  text-align: center;
-  padding: 8px;
-  background: rgba(100, 255, 218, 0.05);
+.traffic-map-container {
+  width: 100%;
+  height: 200px;
   border-radius: 8px;
+  overflow: hidden;
+  background: rgba(100, 255, 218, 0.05);
 }
 
-.route-name {
-  font-size: 0.75em;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+.traffic-map {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
 }
-
-.route-time {
-  font-size: 0.9em;
-  font-weight: 600;
-}
-
-.route-normal { color: #4ade80; }
-.route-slow { color: #fbbf24; }
-.route-heavy { color: #f87171; }
 
 /* Calendar Card */
 .calendar-card {

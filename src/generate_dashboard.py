@@ -703,78 +703,6 @@ class DashboardGenerator:
         except Exception:
             return {'status': 'Good', 'aqi': 45}  # Safe fallback
 
-    def _generate_realistic_traffic(self) -> List[Dict]:
-        """Generate realistic traffic data based on time of day and day of week"""
-        try:
-            now = datetime.now()
-            hour = now.hour
-            weekday = now.weekday()  # 0=Monday, 6=Sunday
-
-            # Base travel times for different routes (in minutes)
-            routes = [
-                {'name': 'I-40 East', 'base_time': 18},
-                {'name': 'US-52 North', 'base_time': 22},
-                {'name': 'Business 40', 'base_time': 28}
-            ]
-
-            # Traffic multipliers based on time and day
-            if weekday in [5, 6]:  # Weekend
-                if 10 <= hour <= 16:  # Weekend afternoon shopping/activity
-                    time_multiplier = 1.2
-                elif 17 <= hour <= 20:  # Weekend evening dining
-                    time_multiplier = 1.1
-                else:
-                    time_multiplier = 0.8  # Generally lighter on weekends
-            else:  # Weekday
-                if 7 <= hour <= 9:  # Morning rush hour
-                    time_multiplier = 1.6
-                elif 17 <= hour <= 19:  # Evening rush hour
-                    time_multiplier = 1.5
-                elif 12 <= hour <= 13:  # Lunch hour
-                    time_multiplier = 1.2
-                elif 22 <= hour or hour <= 5:  # Late night/early morning
-                    time_multiplier = 0.7
-                else:  # Regular hours
-                    time_multiplier = 1.0
-
-            traffic_list = []
-            for route in routes:
-                # Calculate actual time with multiplier and some route-specific variation
-                actual_time = int(route['base_time'] * time_multiplier)
-
-                # Add route-specific adjustments
-                if 'I-40' in route['name']:
-                    # Highway, less affected by local traffic but weather sensitive
-                    actual_time = int(actual_time * 0.95)
-                elif 'Business' in route['name']:
-                    # Local roads, more affected by traffic lights and local congestion
-                    actual_time = int(actual_time * 1.1)
-
-                # Determine status based on how much longer than base time
-                time_ratio = actual_time / route['base_time']
-                if time_ratio <= 1.1:
-                    status = 'normal'
-                elif time_ratio <= 1.3:
-                    status = 'slow'
-                else:
-                    status = 'heavy'
-
-                traffic_list.append({
-                    'route': route['name'],
-                    'time': f"{actual_time} min",
-                    'status': status
-                })
-
-            return traffic_list
-
-        except Exception as e:
-            logger.debug(f"Traffic generation failed: {e}")
-            # Safe fallback
-            return [
-                {'route': 'I-40 East', 'time': '22 min', 'status': 'normal'},
-                {'route': 'US-52 North', 'time': '28 min', 'status': 'slow'},
-                {'route': 'Business 40', 'time': '35 min', 'status': 'heavy'}
-            ]
 
     def fetch_forecast(self) -> Optional[List[Dict]]:
         """Fetch 5-day weather forecast from OpenWeatherMap API"""
@@ -1148,7 +1076,15 @@ class DashboardGenerator:
 
             # Air quality data (real or mock)
             air_quality = self.fetch_air_quality()
-            traffic = self._generate_realistic_traffic()
+            
+            # Traffic map configuration
+            traffic_map = self.config.get('traffic_map', {
+                'center_lat': 36.0999,
+                'center_lng': -80.2442,
+                'zoom': 12,
+                'map_type': 'roadmap',
+                'show_traffic': True
+            })
 
             # Calculate sun position for arc (real calculation)
             sun_position = self._calculate_sun_position(weather)
@@ -1232,7 +1168,8 @@ class DashboardGenerator:
                 'config': self.config.get('display', {}),
                 # v2 template specific data
                 'air_quality': air_quality,
-                'traffic': traffic,
+                'traffic_map': traffic_map,
+                'google_maps_api_key': os.getenv('GOOGLE_MAPS_API_KEY'),
                 'sun_position': sun_position,
                 'upcoming_events': upcoming_events,
                 'uv_level': uv_level,

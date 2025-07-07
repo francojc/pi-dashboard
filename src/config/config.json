@@ -22,5 +22,12 @@
     "refresh_interval": 900,
     "theme": "dark",
     "show_seconds": false
+  },
+  "traffic_map": {
+    "center_lat": 36.0999,
+    "center_lng": -80.2442,
+    "zoom": 12,
+    "map_type": "roadmap",
+    "show_traffic": true
   }
 }

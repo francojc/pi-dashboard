@@ -372,31 +372,20 @@
                         </div>
                     </div>
 
-                    <!-- Traffic Section -->
-                    <div class="commute-section">
-                        <div class="commute-label">Traffic Conditions</div>
-                        <div class="commute-routes">
-                            {% if traffic and traffic|length > 0 %}
-                                {% for route in traffic %}
-                                <div class="route">
-                                    <div class="route-name">{{ route.route }}</div>
-                                    <div class="route-time route-{{ route.status }}">{{ route.time }}</div>
-                                </div>
-                                {% endfor %}
+                    <!-- Traffic Map Section -->
+                    <div class="traffic-section">
+                        <div class="traffic-label">Traffic Conditions</div>
+                        <div class="traffic-map-container">
+                            {% if google_maps_api_key %}
+                            <iframe class="traffic-map" 
+                                    src="https://www.google.com/maps/embed/v1/view?key={{ google_maps_api_key }}&center={{ traffic_map.center_lat }},{{ traffic_map.center_lng }}&zoom={{ traffic_map.zoom }}&maptype={{ traffic_map.map_type }}&traffic"
+                                    allowfullscreen>
+                            </iframe>
                             {% else %}
-                                <!-- Fallback traffic data -->
-                                <div class="route">
-                                    <div class="route-name">I-40 East</div>
-                                    <div class="route-time route-normal">22 min</div>
-                                </div>
-                                <div class="route">
-                                    <div class="route-name">US-52 North</div>
-                                    <div class="route-time route-slow">28 min</div>
-                                </div>
-                                <div class="route">
-                                    <div class="route-name">Business 40</div>
-                                    <div class="route-time route-heavy">35 min</div>
-                                </div>
+                            <iframe class="traffic-map" 
+                                    src="https://www.google.com/maps?q={{ traffic_map.center_lat }},{{ traffic_map.center_lng }}&z={{ traffic_map.zoom }}&t=m&layer=t&output=embed"
+                                    allowfullscreen>
+                            </iframe>
                             {% endif %}
                         </div>
                     </div>
