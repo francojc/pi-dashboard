@@ -32,6 +32,12 @@
         "name": "Spanish Dept",
         "color": "#F4B400",
         "enabled": true
+      },
+      "deans-office": {
+        "id": "wfu.edu_r4ojj0ivt8k7ci6l7p5khbvovc@group.calendar.google.com",
+        "name": "Dean's Office",
+        "color": "#0F9D58",
+        "enabled": true
       }
     },
     "max_events_per_calendar": 5,
