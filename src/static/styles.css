@@ -263,7 +263,7 @@ body {
 
 .forecast-item {
   display: grid;
-  grid-template-columns: 80px 60px 1fr 80px;
+  grid-template-columns: 80px 60px 1fr 200px;
   align-items: center;
   gap: 20px;
   padding: 12px 0;
@@ -301,6 +301,94 @@ body {
 .forecast-low {
   color: var(--text-secondary);
   margin-left: 8px;
+}
+
+/* Temperature Container & Bars */
+.forecast-temp-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 200px;
+}
+
+.temp-bar-container {
+  background-color: rgba(100, 255, 218, 0.1);
+  border-radius: 8px;
+  position: relative;
+  height: 16px;
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.temp-bar {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(to right, 
+    #64b5f6 0%,    /* Cool blue for lower temps */
+    #81c784 25%,   /* Cool green */
+    #ffb74d 50%,   /* Warm orange */
+    #ff8a65 75%,   /* Warm red-orange */
+    #e57373 100%   /* Hot red for higher temps */
+  );
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(100, 255, 218, 0.3);
+  
+  /* Dynamic positioning and sizing using CSS custom properties */
+  left: calc( (var(--low) - var(--week-min)) / var(--week-range) * 100% );
+  width: calc( (var(--high) - var(--low)) / var(--week-range) * 100% );
+  
+  /* Ensure minimum visibility */
+  min-width: 20px;
+  
+  /* Fallback for debugging - ensure bars are visible */
+  min-height: 16px;
+}
+
+/* Add subtle glow effect for better visibility */
+.temp-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  border-radius: inherit;
+  opacity: 0.3;
+  filter: blur(2px);
+  z-index: -1;
+}
+
+/* Accessibility: visually hidden text for screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Keep the text temperatures smaller and less prominent */
+.forecast-temp-range {
+  text-align: center;
+  font-size: 0.75em;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Show text temperatures more clearly on hover */
+.forecast-item:hover .forecast-temp-range {
+  opacity: 1;
 }
 
 /* Hourly Weather Chart Card */

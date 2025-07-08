@@ -346,9 +346,19 @@
                                 <div class="forecast-icon-small">☀️</div>
                                 {% endif %}
                                 <div class="forecast-desc">{{ day.description | default('Sunny') }}</div>
-                                <div class="forecast-temp-range">
-                                    <span class="forecast-high">{{ day.high | default('78') }}°</span>
-                                    <span class="forecast-low">{{ day.low | default('65') }}°</span>
+                                <div class="forecast-temp-container">
+                                    <div class="temp-bar-container">
+                                        <div class="temp-bar"
+                                             style="--low: {{ day.low | default('65') }}; --high: {{ day.high | default('78') }}; --week-min: {{ week_temp_min | default('60') }}; --week-range: {{ week_temp_range | default('25') }};"
+                                             aria-label="Low {{ day.low | default('65') }} degrees, High {{ day.high | default('78') }} degrees">
+                                            <span class="visually-hidden">{{ day.low | default('65') }}°</span>
+                                            <span class="visually-hidden">{{ day.high | default('78') }}°</span>
+                                        </div>
+                                    </div>
+                                    <div class="forecast-temp-range">
+                                        <span class="forecast-low">{{ day.low | default('65') }}°</span>
+                                        <span class="forecast-high">{{ day.high | default('78') }}°</span>
+                                    </div>
                                 </div>
                             </div>
                             {% endfor %}
@@ -358,45 +368,95 @@
                                 <div class="forecast-day-name">Today</div>
                                 <div class="forecast-icon-small">☀️</div>
                                 <div class="forecast-desc">Sunny and clear</div>
-                                <div class="forecast-temp-range">
-                                    <span class="forecast-high">78°</span>
-                                    <span class="forecast-low">65°</span>
+                                <div class="forecast-temp-container">
+                                    <div class="temp-bar-container">
+                                        <div class="temp-bar"
+                                             style="--low: 65; --high: 78; --week-min: 62; --week-range: 18;"
+                                             aria-label="Low 65 degrees, High 78 degrees">
+                                            <span class="visually-hidden">65°</span>
+                                            <span class="visually-hidden">78°</span>
+                                        </div>
+                                    </div>
+                                    <div class="forecast-temp-range">
+                                        <span class="forecast-low">65°</span>
+                                        <span class="forecast-high">78°</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="forecast-item">
                                 <div class="forecast-day-name">Tomorrow</div>
                                 <div class="forecast-icon-small">🌧️</div>
                                 <div class="forecast-desc">Light showers</div>
-                                <div class="forecast-temp-range">
-                                    <span class="forecast-high">70°</span>
-                                    <span class="forecast-low">62°</span>
+                                <div class="forecast-temp-container">
+                                    <div class="temp-bar-container">
+                                        <div class="temp-bar"
+                                             style="--low: 62; --high: 70; --week-min: 62; --week-range: 18;"
+                                             aria-label="Low 62 degrees, High 70 degrees">
+                                            <span class="visually-hidden">62°</span>
+                                            <span class="visually-hidden">70°</span>
+                                        </div>
+                                    </div>
+                                    <div class="forecast-temp-range">
+                                        <span class="forecast-low">62°</span>
+                                        <span class="forecast-high">70°</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="forecast-item">
                                 <div class="forecast-day-name">Monday</div>
                                 <div class="forecast-icon-small">⛅</div>
                                 <div class="forecast-desc">Partly cloudy</div>
-                                <div class="forecast-temp-range">
-                                    <span class="forecast-high">75°</span>
-                                    <span class="forecast-low">64°</span>
+                                <div class="forecast-temp-container">
+                                    <div class="temp-bar-container">
+                                        <div class="temp-bar"
+                                             style="--low: 64; --high: 75; --week-min: 62; --week-range: 18;"
+                                             aria-label="Low 64 degrees, High 75 degrees">
+                                            <span class="visually-hidden">64°</span>
+                                            <span class="visually-hidden">75°</span>
+                                        </div>
+                                    </div>
+                                    <div class="forecast-temp-range">
+                                        <span class="forecast-low">64°</span>
+                                        <span class="forecast-high">75°</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="forecast-item">
                                 <div class="forecast-day-name">Tuesday</div>
                                 <div class="forecast-icon-small">☀️</div>
                                 <div class="forecast-desc">Bright and sunny</div>
-                                <div class="forecast-temp-range">
-                                    <span class="forecast-high">80°</span>
-                                    <span class="forecast-low">68°</span>
+                                <div class="forecast-temp-container">
+                                    <div class="temp-bar-container">
+                                        <div class="temp-bar"
+                                             style="--low: 68; --high: 80; --week-min: 62; --week-range: 18;"
+                                             aria-label="Low 68 degrees, High 80 degrees">
+                                            <span class="visually-hidden">68°</span>
+                                            <span class="visually-hidden">80°</span>
+                                        </div>
+                                    </div>
+                                    <div class="forecast-temp-range">
+                                        <span class="forecast-low">68°</span>
+                                        <span class="forecast-high">80°</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="forecast-item">
                                 <div class="forecast-day-name">Wednesday</div>
                                 <div class="forecast-icon-small">⛅</div>
                                 <div class="forecast-desc">Mixed clouds</div>
-                                <div class="forecast-temp-range">
-                                    <span class="forecast-high">77°</span>
-                                    <span class="forecast-low">66°</span>
+                                <div class="forecast-temp-container">
+                                    <div class="temp-bar-container">
+                                        <div class="temp-bar"
+                                             style="--low: 66; --high: 77; --week-min: 62; --week-range: 18;"
+                                             aria-label="Low 66 degrees, High 77 degrees">
+                                            <span class="visually-hidden">66°</span>
+                                            <span class="visually-hidden">77°</span>
+                                        </div>
+                                    </div>
+                                    <div class="forecast-temp-range">
+                                        <span class="forecast-low">66°</span>
+                                        <span class="forecast-high">77°</span>
+                                    </div>
                                 </div>
                             </div>
                         {% endif %}

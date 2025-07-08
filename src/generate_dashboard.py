@@ -1009,7 +1009,7 @@ class DashboardGenerator:
                     forecast_days[day_key]['high'] = max(forecast_days[day_key]['high'], temp)
                     forecast_days[day_key]['low'] = min(forecast_days[day_key]['low'], temp)
 
-            # Convert to list and return first 5 days
+            # Convert to list and calculate temperature range for bars
             forecast_list = []
             for day_data in list(forecast_days.values())[:5]:
                 forecast_list.append({
@@ -1019,6 +1019,29 @@ class DashboardGenerator:
                     'high': day_data['high'],
                     'low': day_data['low']
                 })
+
+            # Calculate week temperature range for bar visualization
+            all_temps = []
+            for day in forecast_list:
+                all_temps.extend([day['high'], day['low']])
+            
+            if all_temps:
+                week_temp_min = min(all_temps)
+                week_temp_max = max(all_temps)
+                week_temp_range = week_temp_max - week_temp_min
+                
+                # Ensure minimum range for visual differentiation
+                if week_temp_range < 10:
+                    week_temp_range = 10
+                    week_temp_min = week_temp_max - 10
+            else:
+                week_temp_min = 60
+                week_temp_range = 25
+
+            # Add temperature range data to each forecast day
+            for day in forecast_list:
+                day['week_temp_min'] = week_temp_min
+                day['week_temp_range'] = week_temp_range
 
             return forecast_list
 
@@ -1672,10 +1695,31 @@ class DashboardGenerator:
                             'is_other_month': False
                         })
 
+            # Calculate week temperature range for template if forecast is available
+            week_temp_min = 60
+            week_temp_range = 25
+            if forecast and len(forecast) > 0:
+                all_temps = []
+                for day in forecast:
+                    if 'high' in day and 'low' in day:
+                        all_temps.extend([day['high'], day['low']])
+                
+                if all_temps:
+                    week_temp_min = min(all_temps)
+                    week_temp_max = max(all_temps)
+                    week_temp_range = week_temp_max - week_temp_min
+                    
+                    # Ensure minimum range for visual differentiation
+                    if week_temp_range < 10:
+                        week_temp_range = 10
+                        week_temp_min = week_temp_max - 10
+
             # Prepare template data
             template_data = {
                 'weather': weather,
                 'forecast': forecast,
+                'week_temp_min': week_temp_min,
+                'week_temp_range': week_temp_range,
                 'articles': articles,
                 'events': events,
                 'week_events': week_events,
