@@ -62,14 +62,14 @@
                         <div class="rain-bar" style="height: {{ hour['pop'] }}%" title="Rain: {{ hour['pop'] }}%"></div>
                         {% endfor %}
                     </div>
-                    
+
                     <!-- Temperature Line Chart (SVG Overlay) -->
                     <svg class="temp-line-chart" viewBox="0 0 800 200" preserveAspectRatio="none">
                         {% set temp_values = weather.hourly_forecast | map(attribute='temp') | list %}
                         {% set min_temp = temp_values | min %}
                         {% set max_temp = temp_values | max %}
                         {% set temp_range = max_temp - min_temp if max_temp != min_temp else 10 %}
-                        
+
                         <!-- Generate SVG polyline points -->
                         {% set ns = namespace(points=[]) %}
                         {% for hour in weather.hourly_forecast %}
@@ -77,26 +77,26 @@
                             {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
                             {% set _ = ns.points.append(x ~ ',' ~ y) %}
                         {% endfor %}
-                        
-                        <polyline points="{{ ns.points | join(' ') }}" 
-                                 fill="none" 
-                                 stroke="var(--text-accent)" 
+
+                        <polyline points="{{ ns.points | join(' ') }}"
+                                 fill="none"
+                                 stroke="var(--text-accent)"
                                  stroke-width="3"
                                  stroke-linecap="round"
                                  stroke-linejoin="round"/>
-                        
+
                         <!-- Temperature data points (simple circles as fallback) -->
                         {% for hour in weather.hourly_forecast %}
                             {% set x = (loop.index0 * (800 / (weather.hourly_forecast|length - 1))) | round %}
                             {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
-                            <circle cx="{{ x }}" cy="{{ y }}" r="3" 
-                                   fill="var(--text-accent)" 
-                                   stroke="var(--bg-dark)" 
+                            <circle cx="{{ x }}" cy="{{ y }}" r="3"
+                                   fill="var(--text-accent)"
+                                   stroke="var(--bg-dark)"
                                    stroke-width="1"
                                    opacity="0.7"/>
                         {% endfor %}
                     </svg>
-                    
+
                     <!-- Weather Icons Overlay -->
                     <div class="weather-icons-overlay">
                         {% for hour in weather.hourly_forecast %}
@@ -104,15 +104,15 @@
                             {% set temp_normalized = (hour.temp - min_temp) / temp_range if temp_range > 0 else 0.5 %}
                             {% set y_percent = (1 - temp_normalized) * 80 + 10 %}
                             {% if hour.icon %}
-                            <img src="https://openweathermap.org/img/wn/{{ hour.icon }}.png" 
-                                 alt="{{ hour.description }}" 
+                            <img src="https://openweathermap.org/img/wn/{{ hour.icon }}.png"
+                                 alt="{{ hour.description }}"
                                  class="weather-icon-chart"
                                  style="left: {{ x_percent }}%; top: {{ y_percent }}%;">
                             {% endif %}
                         {% endfor %}
                     </div>
                 </div>
-                
+
                 <!-- X-Axis Labels and Data -->
                 <div class="chart-x-axis">
                     {% for hour in weather.hourly_forecast %}
@@ -253,7 +253,7 @@
                                 <div class="agenda-events">
                                     {% if day.events and day.events|length > 0 %}
                                         {% for event in day.events %}
-                                        <div class="agenda-event {% if event.type == 'all_day' %}agenda-all-day{% endif %}" 
+                                        <div class="agenda-event {% if event.type == 'all_day' %}agenda-all-day{% endif %}"
                                              style="border-left-color: {{ event.calendar_color | default('#4285F4') }};">
                                             <div class="agenda-event-indicator" style="background-color: {{ event.calendar_color | default('#4285F4') }};"></div>
                                             <div class="agenda-event-content">
@@ -487,7 +487,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        
+
                         <!-- Travel Times Section -->
                         {% if travel_times and travel_times|length > 0 %}
                         <div class="travel-times">
@@ -695,10 +695,10 @@
         function initTrafficMap() {
             {% if mapbox_map_config and mapbox_map_config.access_token %}
             const mapConfig = {{ mapbox_map_config | tojson }};
-            
+
             try {
                 mapboxgl.accessToken = mapConfig.access_token;
-                
+
                 const map = new mapboxgl.Map({
                     container: 'traffic-map',
                     style: mapConfig.style,
@@ -709,7 +709,7 @@
 
                 map.on('load', function() {
                     console.log('Map loaded successfully');
-                    
+
                     // Add traffic layer
                     map.addSource('mapbox-traffic', {
                         type: 'vector',
@@ -731,14 +731,14 @@
                             'line-color': [
                                 'case',
                                 ['==', ['get', 'congestion'], 'low'], '#4CAF50',     // Green for light traffic
-                                ['==', ['get', 'congestion'], 'moderate'], '#FF9800', // Orange for moderate traffic  
+                                ['==', ['get', 'congestion'], 'moderate'], '#FF9800', // Orange for moderate traffic
                                 ['==', ['get', 'congestion'], 'heavy'], '#F44336',    // Red for heavy traffic
                                 ['==', ['get', 'congestion'], 'severe'], '#9C27B0',   // Purple for severe traffic
                                 '#808080' // Gray for unknown
                             ]
                         }
                     });
-                    
+
                     console.log('Traffic layer added');
                 });
 
@@ -753,50 +753,88 @@
         }
 
         // Dynamic Ticker Speed Based on Content Length
+        let tickerSpeedAdjusted = false; // Prevent multiple calls
         function adjustTickerSpeed() {
+            if (tickerSpeedAdjusted) {
+                console.log('Ticker speed already adjusted, skipping...');
+                return;
+            }
+
             const tickers = document.querySelectorAll('.ticker-scroll');
-            
+
             tickers.forEach(ticker => {
                 // Get the total width of the ticker content
                 const contentWidth = ticker.scrollWidth;
                 const containerWidth = ticker.parentElement.offsetWidth;
-                
+
                 // Different speeds for different ticker types
                 let readingSpeed;
                 let minDuration;
-                
+
                 if (ticker.classList.contains('calendar-ticker-scroll')) {
-                    // Calendar events: slower for easier reading
-                    readingSpeed = 120; // pixels per second
-                    minDuration = 15;
+                    // Calendar events: much slower for easier reading (less content, shorter events)
+                    readingSpeed = 80; // pixels per second - slow
+                    minDuration = 10;
                 } else {
-                    // News ticker: faster to complete cycles and show all content
-                    readingSpeed = 250; // pixels per second - much faster
-                    minDuration = 20;
+                    // News ticker: much faster to complete cycles and show all content (more content, longer headlines)
+                    readingSpeed = 150; // pixels per second - much faster
+                    minDuration = 15;
                 }
-                
+
                 const totalDistance = contentWidth + containerWidth; // Content + container width for full cycle
                 let duration = totalDistance / readingSpeed;
-                
+
                 // Apply minimum duration only to ensure readability (no maximum to allow full content display)
                 duration = Math.max(minDuration, duration);
-                
-                // Apply the calculated duration
-                ticker.style.animation = `slide ${duration}s linear infinite`;
-                
-                console.log(`Ticker: ${ticker.className}, Content: ${contentWidth}px, Speed: ${readingSpeed}px/s, Duration: ${duration}s`);
+
+                // Create unique animation name for this ticker
+                const tickerType = ticker.classList.contains('calendar-ticker-scroll') ? 'CALENDAR' : 'NEWS';
+                const animationName = `slide-${tickerType.toLowerCase()}-${Date.now()}`;
+
+                // Create CSS keyframes with exact pixel distances
+                const keyframes = `
+                @keyframes ${animationName} {
+                    0% { transform: translateX(${containerWidth}px); }
+                    100% { transform: translateX(-${contentWidth}px); }
+                }`;
+
+                // Add keyframes to stylesheet
+                try {
+                    document.styleSheets[0].insertRule(keyframes);
+                } catch (e) {
+                    console.warn('Could not insert keyframes, falling back to default animation');
+                }
+
+                // Apply the calculated duration with custom animation
+                ticker.style.animation = `${animationName} ${duration}s linear infinite`;
+
+                // Debug logging
+                console.log(`${tickerType} Ticker Debug:`);
+                console.log(`  Content Width: ${contentWidth}px`);
+                console.log(`  Container Width: ${containerWidth}px`);
+                console.log(`  Total Distance: ${totalDistance}px`);
+                console.log(`  Reading Speed: ${readingSpeed}px/s`);
+                console.log(`  Calculated Duration: ${duration}s`);
+                console.log(`  Animation: ${animationName} ${duration}s linear infinite`);
+                console.log(`  Start Position: translateX(${containerWidth}px)`);
+                console.log(`  End Position: translateX(-${contentWidth}px)`);
             });
+
+            tickerSpeedAdjusted = true;
+            console.log('Ticker speed adjustment completed');
         }
 
         // Initialize map after DOM is loaded
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
                 initTrafficMap();
-                adjustTickerSpeed();
+                // Add delay to ensure content is fully rendered before measuring
+                setTimeout(adjustTickerSpeed, 100);
             });
         } else {
             initTrafficMap();
-            adjustTickerSpeed();
+            // Add delay to ensure content is fully rendered before measuring
+            setTimeout(adjustTickerSpeed, 100);
         }
     </script>
 </body>
