@@ -258,7 +258,7 @@ body {
 .forecast-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
 .forecast-item {
@@ -266,7 +266,7 @@ body {
   grid-template-columns: 80px 60px 1fr 200px;
   align-items: center;
   gap: 20px;
-  padding: 12px 0;
+  padding: 8px 0;
   border-bottom: 1px solid rgba(100, 255, 218, 0.1);
 }
 
@@ -325,26 +325,33 @@ body {
 .temp-bar {
   position: absolute;
   height: 100%;
-  background: linear-gradient(to right, 
-    #64b5f6 0%,    /* Cool blue for lower temps */
-    #81c784 25%,   /* Cool green */
-    #ffb74d 50%,   /* Warm orange */
-    #ff8a65 75%,   /* Warm red-orange */
-    #e57373 100%   /* Hot red for higher temps */
-  );
   border-radius: 8px;
   transition: all 0.3s ease;
   border: 1px solid rgba(100, 255, 218, 0.3);
-  
+
   /* Dynamic positioning and sizing using CSS custom properties */
   left: calc( (var(--low) - var(--week-min)) / var(--week-range) * 100% );
   width: calc( (var(--high) - var(--low)) / var(--week-range) * 100% );
-  
+
   /* Ensure minimum visibility */
   min-width: 20px;
-  
-  /* Fallback for debugging - ensure bars are visible */
   min-height: 16px;
+
+  /* Temperature-responsive gradient background */
+  background: linear-gradient(to right,
+    /* Low temp color - responsive to --low value */
+    hsl(
+      calc(220 - (var(--low) - 50) * 5), /* Hue: blue (220) at 50°F to red (0) at 105°F */
+      80%,
+      50%
+    ) 0%,
+    /* High temp color - responsive to --high value */
+    hsl(
+      calc(220 - (var(--high) - 50) * 5), /* Hue: blue (220) at 50°F to red (0) at 105°F */
+      80%,
+      50%
+    ) 100%
+  );
 }
 
 /* Add subtle glow effect for better visibility */
@@ -522,15 +529,15 @@ body {
     height: 140px;
     margin: 0 10px;
   }
-  
+
   .chart-x-axis {
     padding: 0 10px;
   }
-  
+
   .axis-details {
     font-size: 0.65em;
   }
-  
+
   .axis-icon .weather-icon-small {
     width: 1.5em;
     height: 1.5em;
