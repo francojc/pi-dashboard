@@ -6,8 +6,8 @@
   },
   "rss_feeds": {
     "BBC News": "http://feeds.bbci.co.uk/news/rss.xml",
-    "Hacker News": "https://news.ycombinator.com/rss",
-    "r/ClaudeAI": "https://www.reddit.com/r/ClaudeAI/hot/.rss"
+    "Higher Ed": "https://www.highereddive.com/feeds/news/",
+    "Chronicle": "https://www.chronicle.com/index.rss"
   },
   "rss_settings": {
     "items_per_feed": 3
@@ -15,18 +15,6 @@
   "calendar": {
     "use_mock_data": false,
     "calendars": {
-      "work": {
-        "id": "francojc@wfu.edu",
-        "name": "Work",
-        "color": "#4285F4",
-        "enabled": true
-      },
-      "personal": {
-        "id": "jerid.francom@gmail.com",
-        "name": "Personal",
-        "color": "#DB4437",
-        "enabled": true
-      },
       "spanish": {
         "id": "wfu.edu_27uakldtgi42knb0bbcs50flgk@group.calendar.google.com",
         "name": "Spanish Dept",
@@ -61,18 +49,23 @@
     "service": "mapbox",
     "center_lat": 36.10559763800109,
     "center_lng": -80.26444016676945,
-    "zoom": 11,
+    "zoom": 12,
     "map_style": "dark-v10",
     "destinations": [
+      {
+        "name": "Home",
+        "lat": 36.082572866728896,
+        "lng": -80.27458973226689
+      },
       {
         "name": "RJR High",
         "lat": 36.101143767437115,
         "lng": -80.2653018618981
       },
       {
-        "name": "Home",
-        "lat": 36.082572866728896,
-        "lng": -80.27458973226689
+        "name": "Ice House",
+        "lat": 36.05066250756535,
+        "lng": -79.89873132275726
       }
     ],
     "home_location": {

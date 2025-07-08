@@ -6,6 +6,8 @@
     <meta http-equiv="refresh" content="{{ config.refresh_interval | default(900) }}">
     <title>Dashboard v2</title>
     <link rel="stylesheet" href="static/styles.css">
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet'>
 </head>
 <body>
     <!-- Weather Alert Banner -->
@@ -48,12 +50,95 @@
             </div>
         </section>
 
+        <!-- Full-width Weather Trends Card -->
+        <div class="card hourly-chart-card full-width-weather">
+            {% if weather and weather.hourly_forecast %}
+            <div class="hourly-chart-container">
+                <!-- Chart Area -->
+                <div class="chart-area">
+                    <!-- Rain Probability Bars (Background) -->
+                    <div class="rain-bars">
+                        {% for hour in weather.hourly_forecast %}
+                        <div class="rain-bar" style="height: {{ hour['pop'] }}%" title="Rain: {{ hour['pop'] }}%"></div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Temperature Line Chart (SVG Overlay) -->
+                    <svg class="temp-line-chart" viewBox="0 0 800 200" preserveAspectRatio="none">
+                        {% set temp_values = weather.hourly_forecast | map(attribute='temp') | list %}
+                        {% set min_temp = temp_values | min %}
+                        {% set max_temp = temp_values | max %}
+                        {% set temp_range = max_temp - min_temp if max_temp != min_temp else 10 %}
+                        
+                        <!-- Generate SVG polyline points -->
+                        {% set ns = namespace(points=[]) %}
+                        {% for hour in weather.hourly_forecast %}
+                            {% set x = (loop.index0 * (800 / (weather.hourly_forecast|length - 1))) | round %}
+                            {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
+                            {% set _ = ns.points.append(x ~ ',' ~ y) %}
+                        {% endfor %}
+                        
+                        <polyline points="{{ ns.points | join(' ') }}" 
+                                 fill="none" 
+                                 stroke="var(--text-accent)" 
+                                 stroke-width="3"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round"/>
+                        
+                        <!-- Temperature data points (simple circles as fallback) -->
+                        {% for hour in weather.hourly_forecast %}
+                            {% set x = (loop.index0 * (800 / (weather.hourly_forecast|length - 1))) | round %}
+                            {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
+                            <circle cx="{{ x }}" cy="{{ y }}" r="3" 
+                                   fill="var(--text-accent)" 
+                                   stroke="var(--bg-dark)" 
+                                   stroke-width="1"
+                                   opacity="0.7"/>
+                        {% endfor %}
+                    </svg>
+                    
+                    <!-- Weather Icons Overlay -->
+                    <div class="weather-icons-overlay">
+                        {% for hour in weather.hourly_forecast %}
+                            {% set x_percent = (loop.index0 / (weather.hourly_forecast|length - 1)) * 100 %}
+                            {% set temp_normalized = (hour.temp - min_temp) / temp_range if temp_range > 0 else 0.5 %}
+                            {% set y_percent = (1 - temp_normalized) * 80 + 10 %}
+                            {% if hour.icon %}
+                            <img src="https://openweathermap.org/img/wn/{{ hour.icon }}.png" 
+                                 alt="{{ hour.description }}" 
+                                 class="weather-icon-chart"
+                                 style="left: {{ x_percent }}%; top: {{ y_percent }}%;">
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- X-Axis Labels and Data -->
+                <div class="chart-x-axis">
+                    {% for hour in weather.hourly_forecast %}
+                    <div class="x-axis-item">
+                        <div class="axis-time">{{ hour.time }}</div>
+                        <div class="axis-temp">{{ hour.temp }}°</div>
+                        <div class="axis-details">
+                            <span class="wind">{{ hour.wind_speed }}mph</span>
+                            <span class="humidity">{{ hour.humidity }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="hourly-chart-container">
+                <p class="no-data">Hourly forecast not available</p>
+            </div>
+            {% endif %}
+        </div>
+
         <!-- Main Content Grid -->
         <div class="content-grid">
             <!-- Left Column - Calendar Card -->
             <div class="left-column">
                 <div class="card calendar-card">
-                    <h2 class="card-title">Calendar</h2>
 
                     <div class="calendar-header-info">
                         <div class="week-info">Week {{ week_number | default('27') }}</div>
@@ -76,9 +161,9 @@
                                 <div class="mini-day">3</div>
                                 <div class="mini-day">4</div>
                                 <div class="mini-day">5</div>
-                                <div class="mini-day today">6</div>
+                                <div class="mini-day">6</div>
                                 <div class="mini-day">7</div>
-                                <div class="mini-day">8</div>
+                                <div class="mini-day today">8</div>
                                 <div class="mini-day">9</div>
                                 <div class="mini-day">10</div>
                                 <div class="mini-day">11</div>
@@ -162,8 +247,8 @@
                             {% for day in agenda_events %}
                             <div class="agenda-day {% if day.is_today %}agenda-today{% endif %}">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">{{ day.date }}</div>
-                                    <div class="agenda-day-name">{{ day.day_name }}</div>
+                                    <div class="agenda-date-text">{{ day.day_name }}</div>
+                                    <div class="agenda-day-name">{{ day.date }}</div>
                                 </div>
                                 <div class="agenda-events">
                                     {% if day.events and day.events|length > 0 %}
@@ -198,8 +283,8 @@
                             <!-- Fallback agenda -->
                             <div class="agenda-day agenda-today">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">07/06</div>
-                                    <div class="agenda-day-name">Today</div>
+                                    <div class="agenda-date-text">Today</div>
+                                    <div class="agenda-day-name">7/8</div>
                                 </div>
                                 <div class="agenda-events">
                                     <div class="agenda-event agenda-all-day">
@@ -210,8 +295,8 @@
                             </div>
                             <div class="agenda-day">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">07/07</div>
-                                    <div class="agenda-day-name">Tomorrow</div>
+                                    <div class="agenda-date-text">Tomorrow</div>
+                                    <div class="agenda-day-name">7/9</div>
                                 </div>
                                 <div class="agenda-events">
                                     <div class="agenda-event">
@@ -222,8 +307,8 @@
                             </div>
                             <div class="agenda-day">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">07/08</div>
-                                    <div class="agenda-day-name">Tuesday</div>
+                                    <div class="agenda-date-text">Tuesday</div>
+                                    <div class="agenda-day-name">7/10</div>
                                 </div>
                                 <div class="agenda-events">
                                     <div class="agenda-no-events">No events</div>
@@ -231,8 +316,8 @@
                             </div>
                             <div class="agenda-day">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">07/09</div>
-                                    <div class="agenda-day-name">Wednesday</div>
+                                    <div class="agenda-date-text">Wednesday</div>
+                                    <div class="agenda-day-name">7/11</div>
                                 </div>
                                 <div class="agenda-events">
                                     <div class="agenda-no-events">No events</div>
@@ -240,8 +325,8 @@
                             </div>
                             <div class="agenda-day">
                                 <div class="agenda-date">
-                                    <div class="agenda-date-text">07/10</div>
-                                    <div class="agenda-day-name">Thursday</div>
+                                    <div class="agenda-date-text">Thursday</div>
+                                    <div class="agenda-day-name">7/12</div>
                                 </div>
                                 <div class="agenda-events">
                                     <div class="agenda-no-events">No events</div>
@@ -254,86 +339,8 @@
 
             <!-- Right Column - Weather Related Cards -->
             <div class="right-column">
-                <!-- Hourly Forecast Chart Card -->
-                <div class="card hourly-chart-card">
-                    <h2 class="card-title">Today's Weather Trends</h2>
-                    {% if weather and weather.hourly_forecast %}
-                    <div class="hourly-chart-container">
-                        <!-- Chart Area -->
-                        <div class="chart-area">
-                            <!-- Rain Probability Bars (Background) -->
-                            <div class="rain-bars">
-                                {% for hour in weather.hourly_forecast %}
-                                <div class="rain-bar" style="height: {{ hour.pop }}%" title="Rain: {{ hour.pop }}%"></div>
-                                {% endfor %}
-                            </div>
-                            
-                            <!-- Temperature Line Chart (SVG Overlay) -->
-                            <svg class="temp-line-chart" viewBox="0 0 800 200" preserveAspectRatio="none">
-                                {% set temp_values = weather.hourly_forecast | map(attribute='temp') | list %}
-                                {% set min_temp = temp_values | min %}
-                                {% set max_temp = temp_values | max %}
-                                {% set temp_range = max_temp - min_temp if max_temp != min_temp else 10 %}
-                                
-                                <!-- Generate SVG polyline points -->
-                                {% set ns = namespace(points=[]) %}
-                                {% for hour in weather.hourly_forecast %}
-                                    {% set x = (loop.index0 * (800 / (weather.hourly_forecast|length - 1))) | round %}
-                                    {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
-                                    {% set _ = ns.points.append(x ~ ',' ~ y) %}
-                                {% endfor %}
-                                
-                                <polyline points="{{ ns.points | join(' ') }}" 
-                                         fill="none" 
-                                         stroke="var(--text-accent)" 
-                                         stroke-width="3"
-                                         stroke-linecap="round"
-                                         stroke-linejoin="round"/>
-                                
-                                <!-- Temperature data points -->
-                                {% for hour in weather.hourly_forecast %}
-                                    {% set x = (loop.index0 * (800 / (weather.hourly_forecast|length - 1))) | round %}
-                                    {% set y = (200 - ((hour.temp - min_temp) / temp_range) * 160 - 20) | round %}
-                                    <circle cx="{{ x }}" cy="{{ y }}" r="4" 
-                                           fill="var(--text-accent)" 
-                                           stroke="var(--bg-dark)" 
-                                           stroke-width="2"/>
-                                {% endfor %}
-                            </svg>
-                        </div>
-                        
-                        <!-- X-Axis Labels and Data -->
-                        <div class="chart-x-axis">
-                            {% for hour in weather.hourly_forecast %}
-                            <div class="x-axis-item">
-                                <div class="axis-time">{{ hour.time }}</div>
-                                <div class="axis-icon">
-                                    {% if hour.icon %}
-                                    <img src="https://openweathermap.org/img/wn/{{ hour.icon }}.png"
-                                         alt="{{ hour.description }}" class="weather-icon-small">
-                                    {% else %}
-                                    <span class="weather-emoji">☀️</span>
-                                    {% endif %}
-                                </div>
-                                <div class="axis-temp">{{ hour.temp }}°</div>
-                                <div class="axis-details">
-                                    <span class="wind">{{ hour.wind_speed }}mph</span>
-                                    <span class="humidity">{{ hour.humidity }}%</span>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="hourly-chart-container">
-                        <p class="no-data">Hourly forecast not available</p>
-                    </div>
-                    {% endif %}
-                </div>
-
                 <!-- 5-Day Forecast Card -->
                 <div class="card forecast-card">
-                    <h2 class="card-title">5-Day Outlook</h2>
                     <div class="forecast-container">
                         {% if forecast and forecast|length > 0 %}
                             {% for day in forecast[:5] %}
@@ -465,30 +472,19 @@
 
                 <!-- Travel Card -->
                 <div class="card local-info-card">
-                    <h2 class="card-title">Travel</h2>
 
                     <!-- Traffic Map Section -->
                     <div class="traffic-section">
                         <div class="traffic-label">Traffic Conditions</div>
                         <div class="traffic-map-container">
-                            {% if mapbox_map_url %}
-                            <!-- Mapbox static image with traffic -->
-                            <img class="traffic-map" 
-                                 src="{{ mapbox_map_url }}"
-                                 alt="Traffic Map"
-                                 loading="lazy">
-                            {% elif google_maps_api_key %}
-                            <!-- Google Maps fallback -->
-                            <iframe class="traffic-map" 
-                                    src="https://www.google.com/maps/embed/v1/view?key={{ google_maps_api_key }}&center={{ traffic_map.center_lat }},{{ traffic_map.center_lng }}&zoom={{ traffic_map.zoom }}&maptype={{ traffic_map.map_type }}&traffic"
-                                    allowfullscreen>
-                            </iframe>
+                            {% if mapbox_map_config and mapbox_map_config.access_token %}
+                            <!-- Mapbox GL JS interactive map with traffic -->
+                            <div id="traffic-map" class="traffic-map"></div>
                             {% else %}
-                            <!-- Basic fallback -->
-                            <iframe class="traffic-map" 
-                                    src="https://www.google.com/maps?q={{ traffic_map.center_lat }},{{ traffic_map.center_lng }}&z={{ traffic_map.zoom }}&t=m&layer=t&output=embed"
-                                    allowfullscreen>
-                            </iframe>
+                            <!-- Fallback when Mapbox not available -->
+                            <div class="traffic-map-fallback">
+                                <p>Traffic map temporarily unavailable</p>
+                            </div>
                             {% endif %}
                         </div>
                         
@@ -694,6 +690,114 @@
 
         // Check for test parameters on load
         checkTestParams();
+
+        // Initialize Mapbox traffic map
+        function initTrafficMap() {
+            {% if mapbox_map_config and mapbox_map_config.access_token %}
+            const mapConfig = {{ mapbox_map_config | tojson }};
+            
+            try {
+                mapboxgl.accessToken = mapConfig.access_token;
+                
+                const map = new mapboxgl.Map({
+                    container: 'traffic-map',
+                    style: mapConfig.style,
+                    center: mapConfig.center,
+                    zoom: mapConfig.zoom,
+                    interactive: false  // Disable user interaction for dashboard display
+                });
+
+                map.on('load', function() {
+                    console.log('Map loaded successfully');
+                    
+                    // Add traffic layer
+                    map.addSource('mapbox-traffic', {
+                        type: 'vector',
+                        url: 'mapbox://mapbox.mapbox-traffic-v1'
+                    });
+
+                    // Add traffic congestion layer
+                    map.addLayer({
+                        id: 'traffic',
+                        type: 'line',
+                        source: 'mapbox-traffic',
+                        'source-layer': 'traffic',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-width': 2,
+                            'line-color': [
+                                'case',
+                                ['==', ['get', 'congestion'], 'low'], '#4CAF50',     // Green for light traffic
+                                ['==', ['get', 'congestion'], 'moderate'], '#FF9800', // Orange for moderate traffic  
+                                ['==', ['get', 'congestion'], 'heavy'], '#F44336',    // Red for heavy traffic
+                                ['==', ['get', 'congestion'], 'severe'], '#9C27B0',   // Purple for severe traffic
+                                '#808080' // Gray for unknown
+                            ]
+                        }
+                    });
+                    
+                    console.log('Traffic layer added');
+                });
+
+                map.on('error', function(e) {
+                    console.error('Map error:', e);
+                });
+
+            } catch (error) {
+                console.error('Failed to initialize map:', error);
+            }
+            {% endif %}
+        }
+
+        // Dynamic Ticker Speed Based on Content Length
+        function adjustTickerSpeed() {
+            const tickers = document.querySelectorAll('.ticker-scroll');
+            
+            tickers.forEach(ticker => {
+                // Get the total width of the ticker content
+                const contentWidth = ticker.scrollWidth;
+                const containerWidth = ticker.parentElement.offsetWidth;
+                
+                // Different speeds for different ticker types
+                let readingSpeed;
+                let minDuration;
+                
+                if (ticker.classList.contains('calendar-ticker-scroll')) {
+                    // Calendar events: slower for easier reading
+                    readingSpeed = 120; // pixels per second
+                    minDuration = 15;
+                } else {
+                    // News ticker: faster to complete cycles and show all content
+                    readingSpeed = 250; // pixels per second - much faster
+                    minDuration = 20;
+                }
+                
+                const totalDistance = contentWidth + containerWidth; // Content + container width for full cycle
+                let duration = totalDistance / readingSpeed;
+                
+                // Apply minimum duration only to ensure readability (no maximum to allow full content display)
+                duration = Math.max(minDuration, duration);
+                
+                // Apply the calculated duration
+                ticker.style.animation = `slide ${duration}s linear infinite`;
+                
+                console.log(`Ticker: ${ticker.className}, Content: ${contentWidth}px, Speed: ${readingSpeed}px/s, Duration: ${duration}s`);
+            });
+        }
+
+        // Initialize map after DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initTrafficMap();
+                adjustTickerSpeed();
+            });
+        } else {
+            initTrafficMap();
+            adjustTickerSpeed();
+        }
     </script>
 </body>
 </html>

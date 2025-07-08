@@ -233,7 +233,7 @@ body {
 .card {
   background: var(--bg-card);
   border-radius: var(--card-radius);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md); /* Reduced from --spacing-lg since no titles */
   border: var(--glass-border);
   box-shadow: var(--card-shadow);
   /* Conditional backdrop-filter for performance */
@@ -541,6 +541,151 @@ body {
   .axis-icon .weather-icon-small {
     width: 1.5em;
     height: 1.5em;
+  }
+}
+
+/* Full-width Weather Trends Card */
+.full-width-weather {
+  /* margin: var(--grid-gap) 0; */
+}
+
+.full-width-weather .hourly-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.full-width-weather .chart-area {
+  height: 80px; /* Further reduced height for compact layout */
+  margin: 0 20px;
+  position: relative;
+}
+
+.full-width-weather .rain-bars {
+  padding: 10px 0;
+}
+
+.full-width-weather .chart-x-axis {
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr); /* Fixed 8 columns for hourly data */
+  gap: 8px;
+}
+
+.full-width-weather .x-axis-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  min-height: 0;
+}
+
+.full-width-weather .axis-time {
+  font-size: 0.8em;
+  color: var(--text-accent);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.full-width-weather .axis-temp {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.full-width-weather .axis-details {
+  font-size: 0.65em;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  justify-content: center;
+  line-height: 1;
+}
+
+.full-width-weather .axis-details span {
+  white-space: nowrap;
+}
+
+/* Weather Icons Overlay */
+.full-width-weather .weather-icons-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.full-width-weather .weather-icon-chart {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  z-index: 10;
+}
+
+/* Responsive adjustments for full-width weather */
+@media (max-width: 1200px) {
+  .full-width-weather .chart-area {
+    height: 70px;
+    margin: 0 15px;
+  }
+
+  .full-width-weather .chart-x-axis {
+    padding: 0 15px;
+    gap: 6px;
+  }
+
+  .full-width-weather .axis-time {
+    font-size: 0.75em;
+  }
+
+  .full-width-weather .axis-temp {
+    font-size: 0.8em;
+  }
+
+  .full-width-weather .axis-details {
+    font-size: 0.6em;
+    gap: 3px;
+  }
+
+  .full-width-weather .weather-icon-chart {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .full-width-weather .chart-area {
+    height: 60px;
+    margin: 0 10px;
+  }
+
+  .full-width-weather .chart-x-axis {
+    padding: 0 10px;
+    gap: 4px;
+  }
+
+  .full-width-weather .axis-time {
+    font-size: 0.7em;
+  }
+
+  .full-width-weather .axis-temp {
+    font-size: 0.75em;
+  }
+
+  .full-width-weather .axis-details {
+    font-size: 0.55em;
+    gap: 2px;
+  }
+
+  .full-width-weather .weather-icon-chart {
+    width: 18px;
+    height: 18px;
   }
 }
 
@@ -1021,13 +1166,13 @@ body {
 
 .ticker-scroll {
   white-space: nowrap;
-  animation: slide 60s linear infinite;
   font-size: 1em;
   line-height: 1.4;
+  /* Animation duration will be set dynamically via JavaScript */
 }
 
 .calendar-ticker-scroll {
-  animation: slide 45s linear infinite;
+  /* Animation duration will be set dynamically via JavaScript */
   animation-delay: -15s;
 }
 

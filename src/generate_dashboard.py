@@ -370,25 +370,28 @@ class MapboxService:
         self._cache_time = None
         self.cache_duration = 300  # 5 minutes cache
         
-    def get_map_url(self, width: int = 300, height: int = 300) -> str:
-        """Generate Mapbox static image URL with traffic overlay"""
+    def get_map_config(self) -> Dict:
+        """Generate Mapbox configuration for interactive traffic map"""
         try:
             center_lat = self.config.get('center_lat', 36.133269983139876)
             center_lng = self.config.get('center_lng', -80.27593704795439)
             zoom = self.config.get('zoom', 11)
-            map_style = self.config.get('map_style', 'streets-v11')
+            map_style = self.config.get('map_style', 'dark-v10')
+            # Ensure full Mapbox style URL
+            if not map_style.startswith('mapbox://'):
+                map_style = f'mapbox://styles/mapbox/{map_style}'
             
-            # Mapbox Static Images API URL with traffic overlay
-            url = (f"{self.base_url}/styles/v1/mapbox/{map_style}/static/"
-                  f"{center_lng},{center_lat},{zoom}/{width}x{height}@2x"
-                  f"?access_token={self.api_key}")
-            
-            logger.debug(f"Generated Mapbox static map URL: {url[:100]}...")
-            return url
+            return {
+                'access_token': self.api_key,
+                'center': [center_lng, center_lat],
+                'zoom': zoom,
+                'style': map_style,
+                'traffic_enabled': True
+            }
             
         except Exception as e:
-            logger.error(f"Failed to generate Mapbox map URL: {e}")
-            return ""
+            logger.error(f"Failed to generate Mapbox config: {e}")
+            return {}
     
     def get_travel_times(self, destinations: List[Dict]) -> List[Dict]:
         """Get travel times to destinations using Mapbox Matrix API"""
@@ -526,6 +529,7 @@ class DashboardGenerator:
         self.output_dir.mkdir(exist_ok=True)
         self.output_static_dir = self.output_dir / "static"
         self.output_static_dir.mkdir(exist_ok=True)
+        self.test_mode = False  # Will be set by command line args
         self.calendar_service = None
         if not self.config.get('calendar', {}).get('use_mock_data', True):
             try:
@@ -641,11 +645,16 @@ class DashboardGenerator:
 
     def fetch_weather(self) -> Optional[Dict]:
         """Fetch weather data from OpenWeatherMap One Call API 3.0 with alerts"""
+        # If in test mode, return mock data
+        if self.test_mode:
+            logger.info("Test mode: Using mock weather data")
+            return self._get_mock_weather_data()
+            
         try:
             config = self.config.get('weather', {})
             if not config.get('api_key'):
                 logger.warning("No weather API key configured")
-                return None
+                return self._get_mock_weather_data()
 
             # First get coordinates using geocoding API
             location = config.get('location', os.getenv('WEATHER_LOCATION', 'Winston-Salem,NC,US'))
@@ -853,6 +862,114 @@ class DashboardGenerator:
             logger.error(f"Unexpected error fetching hourly forecast: {e}")
             return None
 
+    def _get_mock_weather_data(self) -> Dict:
+        """Return mock weather data for testing"""
+        return {
+            'temp': 81,
+            'feels_like': 87,
+            'description': 'Clear Sky',
+            'icon': '01d',
+            'humidity': 65,
+            'wind_speed': 8,
+            'wind_unit': 'mph',
+            'sunrise': '06:30',
+            'sunset': '20:15',
+            'uv_index': 7,
+            'alerts': [],
+            'hourly_forecast': [
+                {'time': '9 AM', 'temp': 81, 'humidity': 65, 'wind_speed': 8, 'pop': 0, 'description': 'Clear Sky', 'icon': '01d'},
+                {'time': '12 PM', 'temp': 85, 'humidity': 60, 'wind_speed': 10, 'pop': 5, 'description': 'Sunny', 'icon': '01d'},
+                {'time': '3 PM', 'temp': 88, 'humidity': 55, 'wind_speed': 12, 'pop': 10, 'description': 'Partly Cloudy', 'icon': '02d'},
+                {'time': '6 PM', 'temp': 85, 'humidity': 60, 'wind_speed': 8, 'pop': 15, 'description': 'Partly Cloudy', 'icon': '02d'},
+                {'time': '9 PM', 'temp': 79, 'humidity': 70, 'wind_speed': 6, 'pop': 20, 'description': 'Clear', 'icon': '01n'},
+                {'time': '12 AM', 'temp': 75, 'humidity': 75, 'wind_speed': 4, 'pop': 0, 'description': 'Clear', 'icon': '01n'},
+                {'time': '3 AM', 'temp': 72, 'humidity': 80, 'wind_speed': 3, 'pop': 0, 'description': 'Clear', 'icon': '01n'},
+                {'time': '6 AM', 'temp': 74, 'humidity': 78, 'wind_speed': 5, 'pop': 5, 'description': 'Sunny', 'icon': '01d'}
+            ]
+        }
+
+    def _get_mock_calendar_events(self) -> List[Dict]:
+        """Return mock calendar events for testing"""
+        return [
+            {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
+            {'summary': 'Project Review', 'start': '14:00', 'end': '15:00', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
+            {'summary': 'Client Call', 'start': '16:00', 'end': '17:00', 'calendar_name': 'Personal', 'calendar_color': '#4285F4'},
+            {'summary': 'Monthly review', 'start': 'All Day', 'end': '', 'type': 'all_day', 'calendar_name': 'Personal', 'calendar_color': '#4285F4'}
+        ]
+
+    def _get_mock_agenda_events(self) -> List[Dict]:
+        """Return mock agenda events for testing"""
+        now = datetime.now()
+        agenda = []
+
+        for i in range(5):
+            day = now + timedelta(days=i)
+            day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day.weekday()]
+
+            # Today gets a special name
+            if i == 0:
+                display_name = 'Today'
+            elif i == 1:
+                display_name = 'Tomorrow'
+            else:
+                display_name = day_name
+
+            agenda_day = {
+                'date': f"{day.month}/{day.day}",
+                'day_name': display_name,
+                'day_abbr': day_name[:3],
+                'is_today': i == 0,
+                'events': []
+            }
+
+            # Add mock events for some days
+            if i == 0:  # Today
+                agenda_day['events'] = [
+                    {'summary': 'Do laundry', 'start': '21:00', 'end': '22:00', 'type': 'timed', 'calendar_name': 'Personal', 'calendar_color': '#4285F4'},
+                    {'summary': 'Monthly review', 'start': 'All Day', 'end': '', 'type': 'all_day', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'}
+                ]
+            elif i == 1:  # Tomorrow
+                agenda_day['events'] = [
+                    {'summary': 'NCSU orientation', 'start': '08:30', 'end': '09:00', 'type': 'timed', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'}
+                ]
+            elif i == 3:  # Day after tomorrow + 1
+                agenda_day['events'] = [
+                    {'summary': 'Client Call', 'start': '14:00', 'end': '15:00', 'type': 'timed', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
+                    {'summary': 'Deadline: Project X', 'start': 'All Day', 'end': '', 'type': 'all_day', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'}
+                ]
+            # Days 2 and 4 will have no events to test empty day display
+
+            agenda.append(agenda_day)
+
+        return agenda
+
+    def _get_mock_traffic_data(self) -> Dict:
+        """Return mock traffic data for testing"""
+        return {
+            'map_config': {
+                'access_token': 'mock_token',
+                'style': 'mapbox://styles/mapbox/dark-v10',
+                'center': [-80.27593704795439, 36.133269983139876],
+                'zoom': 12
+            },
+            'travel_times': [
+                {'destination': 'Downtown', 'duration_text': '12 mins', 'traffic_status': 'Light traffic'},
+                {'destination': 'University', 'duration_text': '8 mins', 'traffic_status': 'Normal'},
+                {'destination': 'Airport', 'duration_text': '25 mins', 'traffic_status': 'Moderate traffic'}
+            ],
+            'service': 'mock'
+        }
+
+    def _get_mock_forecast_data(self) -> List[Dict]:
+        """Return mock forecast data for testing"""
+        return [
+            {'day': 'Today', 'high': 85, 'low': 68, 'description': 'Sunny', 'icon': '01d'},
+            {'day': 'Tomorrow', 'high': 82, 'low': 65, 'description': 'Partly Cloudy', 'icon': '02d'},
+            {'day': 'Thursday', 'high': 79, 'low': 62, 'description': 'Light Rain', 'icon': '10d'},
+            {'day': 'Friday', 'high': 81, 'low': 64, 'description': 'Cloudy', 'icon': '04d'},
+            {'day': 'Saturday', 'high': 84, 'low': 67, 'description': 'Sunny', 'icon': '01d'}
+        ]
+
     def fetch_air_quality(self) -> Dict:
         """Fetch air quality data from OpenWeather Air Pollution API or return mock data"""
         try:
@@ -959,6 +1076,11 @@ class DashboardGenerator:
 
     def fetch_forecast(self) -> Optional[List[Dict]]:
         """Fetch 5-day weather forecast from OpenWeatherMap API"""
+        # If in test mode, return mock data
+        if self.test_mode:
+            logger.info("Test mode: Using mock forecast data")
+            return self._get_mock_forecast_data()
+            
         try:
             config = self.config.get('weather', {})
             if not config.get('api_key'):
@@ -1077,6 +1199,11 @@ class DashboardGenerator:
 
     def fetch_calendar_events(self) -> List[Dict]:
         """Fetch calendar events from Google Calendar or return mock data"""
+        # If in test mode, return mock data immediately
+        if self.test_mode:
+            logger.info("Test mode: Using mock calendar data")
+            return self._get_mock_calendar_events()
+            
         calendar_config = self.config.get('calendar', {})
 
         # Use real Google Calendar if configured
@@ -1148,14 +1275,15 @@ class DashboardGenerator:
 
         # Return mock data as fallback
         logger.info("Using mock calendar data")
-        return [
-            {'summary': 'Team Standup', 'start': '09:00', 'end': '09:30', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
-            {'summary': 'Project Review', 'start': '14:00', 'end': '15:00', 'calendar_name': 'Work', 'calendar_color': '#0F9D58'},
-            {'summary': 'Client Call', 'start': '16:00', 'end': '17:00', 'calendar_name': 'Personal', 'calendar_color': '#4285F4'}
-        ]
+        return self._get_mock_calendar_events()
 
     def fetch_agenda_events(self) -> List[Dict]:
         """Fetch agenda events for the next 5 days from Google Calendar or return mock data"""
+        # If in test mode, return mock data immediately
+        if self.test_mode:
+            logger.info("Test mode: Using mock agenda data")
+            return self._get_mock_agenda_events()
+            
         calendar_config = self.config.get('calendar', {})
 
         # Use real Google Calendar if configured
@@ -1299,49 +1427,7 @@ class DashboardGenerator:
 
         # Return mock agenda data for next 5 days
         logger.info("Using mock agenda data")
-        now = datetime.now()
-        agenda = []
-
-        for i in range(5):
-            day = now + timedelta(days=i)
-            day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day.weekday()]
-
-            # Today gets a special name
-            if i == 0:
-                display_name = 'Today'
-            elif i == 1:
-                display_name = 'Tomorrow'
-            else:
-                display_name = day_name
-
-            agenda_day = {
-                'date': day.strftime('%m/%d'),
-                'day_name': display_name,
-                'day_abbr': day_name[:3],
-                'is_today': i == 0,
-                'events': []
-            }
-
-            # Add mock events for some days
-            if i == 0:  # Today
-                agenda_day['events'] = [
-                    {'summary': 'Do laundry', 'start': '21:00', 'end': '22:00', 'type': 'timed'},
-                    {'summary': 'Monthly review', 'start': 'All Day', 'end': '', 'type': 'all_day'}
-                ]
-            elif i == 1:  # Tomorrow
-                agenda_day['events'] = [
-                    {'summary': 'Team Meeting', 'start': '10:00', 'end': '11:00', 'type': 'timed'}
-                ]
-            elif i == 3:  # Day after tomorrow + 1
-                agenda_day['events'] = [
-                    {'summary': 'Client Call', 'start': '14:00', 'end': '15:00', 'type': 'timed'},
-                    {'summary': 'Deadline: Project X', 'start': 'All Day', 'end': '', 'type': 'all_day'}
-                ]
-            # Days 2 and 4 will have no events to test empty day display
-
-            agenda.append(agenda_day)
-
-        return agenda
+        return self._get_mock_agenda_events()
 
     def fetch_week_calendar_events(self) -> Dict[str, Dict]:
         """Fetch week calendar events from Google Calendar or return mock data"""
@@ -1550,6 +1636,11 @@ class DashboardGenerator:
 
     def fetch_traffic_data(self) -> Dict:
         """Fetch traffic map and travel times data"""
+        # If in test mode, return mock data immediately
+        if self.test_mode:
+            logger.info("Test mode: Using mock traffic data")
+            return self._get_mock_traffic_data()
+            
         try:
             if not self.mapbox_service:
                 logger.warning("Mapbox service not available, using fallback traffic data")
@@ -1558,12 +1649,12 @@ class DashboardGenerator:
             traffic_config = self.config.get('traffic', {})
             destinations = traffic_config.get('destinations', [])
             
-            # Get map URL and travel times
-            map_url = self.mapbox_service.get_map_url()
+            # Get map config and travel times
+            map_config = self.mapbox_service.get_map_config()
             travel_times = self.mapbox_service.get_travel_times(destinations)
             
             return {
-                'map_url': map_url,
+                'map_config': map_config,
                 'travel_times': travel_times,
                 'service': 'mapbox'
             }
@@ -1584,7 +1675,7 @@ class DashboardGenerator:
         })
         
         return {
-            'map_url': '',  # Will trigger Google Maps fallback in template
+            'map_config': {},  # Empty config for fallback
             'travel_times': [],
             'service': 'fallback',
             'traffic_map': traffic_map
@@ -1737,7 +1828,7 @@ class DashboardGenerator:
                 'air_quality': air_quality,
                 'traffic_map': traffic_data.get('traffic_map', traffic_map),
                 'traffic_data': traffic_data,
-                'mapbox_map_url': traffic_data.get('map_url', ''),
+                'mapbox_map_config': traffic_data.get('map_config', {}),
                 'travel_times': traffic_data.get('travel_times', []),
                 'google_maps_api_key': os.getenv('GOOGLE_MAPS_API_KEY'),
                 'sun_position': sun_position,
@@ -1776,9 +1867,14 @@ def main():
                        help='Run continuously with periodic updates')
     parser.add_argument('--interval', type=int, default=900,
                        help='Update interval in seconds (default: 900)')
+    parser.add_argument('--test', action='store_true',
+                       help='Use mock data instead of real API calls')
     args = parser.parse_args()
 
     generator = DashboardGenerator()
+    
+    # Set test mode if requested
+    generator.test_mode = args.test
 
     if args.loop:
         logger.info(f"Starting dashboard generator in loop mode (interval: {args.interval}s)")
