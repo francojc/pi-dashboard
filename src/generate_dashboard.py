@@ -358,6 +358,211 @@ class GoogleCalendarService:
             return []
 
 
+class CanvasService:
+    """Service for Canvas LMS API interactions"""
+    
+    def __init__(self, config: Dict):
+        """Initialize Canvas service with configuration"""
+        self.config = config
+        self.api_key = os.getenv('CANVAS_API_KEY')
+        self.base_url = os.getenv('CANVAS_BASE_URL', 'https://wfu.instructure.com')
+        if not self.base_url.endswith('/api/v1'):
+            self.base_url = f"{self.base_url.rstrip('/')}/api/v1"
+        
+        if not self.api_key:
+            logger.warning("Canvas API key not configured - using mock data")
+        
+    def _make_request(self, endpoint: str, params: Dict = None) -> Optional[Dict]:
+        """Make authenticated request to Canvas API"""
+        if not self.api_key:
+            return None
+            
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        try:
+            url = f"{self.base_url}/{endpoint.lstrip('/')}"
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.error(f"Canvas API request failed: {e}")
+            return None
+    
+    def fetch_assignments(self, days_ahead: int = 14) -> List[Dict]:
+        """Fetch upcoming assignments from configured courses"""
+        if self.config.get('use_mock_data', False) or not self.api_key:
+            return self._get_mock_assignments()
+        
+        all_assignments = []
+        courses = self.config.get('courses', [])
+        max_assignments = self.config.get('max_assignments', 10)
+        
+        # Calculate date range
+        now = datetime.now()
+        end_date = now + timedelta(days=days_ahead)
+        
+        for course in courses:
+            course_id = course.get('id')
+            course_name = course.get('name', f'Course {course_id}')
+            course_color = course.get('color', '#666666')
+            
+            if not course_id:
+                continue
+                
+            assignments = self._make_request(f'courses/{course_id}/assignments', {
+                'bucket': 'upcoming',
+                'per_page': 50
+            })
+            
+            if not assignments:
+                continue
+                
+            for assignment in assignments:
+                due_at = assignment.get('due_at')
+                if not due_at:
+                    continue
+                    
+                try:
+                    due_date = datetime.fromisoformat(due_at.replace('Z', '+00:00'))
+                    if now <= due_date <= end_date:
+                        all_assignments.append({
+                            'title': assignment.get('name', 'Untitled Assignment'),
+                            'course_name': course_name,
+                            'course_color': course_color,
+                            'due_date': due_date.strftime('%m/%d %H:%M'),
+                            'due_date_full': due_date,
+                            'points_possible': assignment.get('points_possible'),
+                            'submission_types': assignment.get('submission_types', []),
+                            'html_url': assignment.get('html_url', ''),
+                            'days_until_due': (due_date.date() - now.date()).days
+                        })
+                except ValueError as e:
+                    logger.warning(f"Invalid date format in assignment: {e}")
+                    continue
+        
+        # Sort by due date and limit results
+        all_assignments.sort(key=lambda x: x['due_date_full'])
+        return all_assignments[:max_assignments]
+    
+    def fetch_announcements(self) -> List[Dict]:
+        """Fetch recent announcements from configured courses"""
+        if self.config.get('use_mock_data', False) or not self.api_key:
+            return self._get_mock_announcements()
+        
+        if not self.config.get('show_announcements', True):
+            return []
+        
+        all_announcements = []
+        courses = self.config.get('courses', [])
+        max_announcements = self.config.get('max_announcements', 5)
+        
+        for course in courses:
+            course_id = course.get('id')
+            course_name = course.get('name', f'Course {course_id}')
+            course_color = course.get('color', '#666666')
+            
+            if not course_id:
+                continue
+                
+            announcements = self._make_request(f'courses/{course_id}/discussion_topics', {
+                'only_announcements': 'true',
+                'per_page': 10
+            })
+            
+            if not announcements:
+                continue
+                
+            for announcement in announcements:
+                posted_at = announcement.get('posted_at')
+                if posted_at:
+                    try:
+                        posted_date = datetime.fromisoformat(posted_at.replace('Z', '+00:00'))
+                        all_announcements.append({
+                            'title': announcement.get('title', 'Untitled Announcement'),
+                            'course_name': course_name,
+                            'course_color': course_color,
+                            'posted_date': posted_date.strftime('%m/%d'),
+                            'posted_date_full': posted_date,
+                            'message': announcement.get('message', '')[:200] + '...' if announcement.get('message', '') else '',
+                            'html_url': announcement.get('html_url', '')
+                        })
+                    except ValueError as e:
+                        logger.warning(f"Invalid date format in announcement: {e}")
+                        continue
+        
+        # Sort by posted date (newest first) and limit results
+        all_announcements.sort(key=lambda x: x['posted_date_full'], reverse=True)
+        return all_announcements[:max_announcements]
+    
+    def _get_mock_assignments(self) -> List[Dict]:
+        """Generate mock assignment data for testing"""
+        mock_assignments = [
+            {
+                'title': 'Spanish Composition Essay',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'due_date': '01/15 23:59',
+                'due_date_full': datetime.now() + timedelta(days=2),
+                'points_possible': 100,
+                'submission_types': ['online_text_entry'],
+                'html_url': '#',
+                'days_until_due': 2
+            },
+            {
+                'title': 'Grammar Quiz 3',
+                'course_name': 'SPA 212-B',
+                'course_color': '#1E88E5',
+                'due_date': '01/18 11:59',
+                'due_date_full': datetime.now() + timedelta(days=5),
+                'points_possible': 50,
+                'submission_types': ['online_quiz'],
+                'html_url': '#',
+                'days_until_due': 5
+            },
+            {
+                'title': 'Oral Presentation',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'due_date': '01/22 10:00',
+                'due_date_full': datetime.now() + timedelta(days=9),
+                'points_possible': 75,
+                'submission_types': ['media_recording'],
+                'html_url': '#',
+                'days_until_due': 9
+            }
+        ]
+        logger.info("Using mock Canvas assignment data")
+        return mock_assignments
+    
+    def _get_mock_announcements(self) -> List[Dict]:
+        """Generate mock announcement data for testing"""
+        mock_announcements = [
+            {
+                'title': 'Important: Quiz Date Change',
+                'course_name': 'SPA 212-B',
+                'course_color': '#1E88E5',
+                'posted_date': '01/10',
+                'posted_date_full': datetime.now() - timedelta(days=3),
+                'message': 'Quiz 3 has been moved from Friday to Monday due to the weather forecast...',
+                'html_url': '#'
+            },
+            {
+                'title': 'Office Hours Update',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'posted_date': '01/12',
+                'posted_date_full': datetime.now() - timedelta(days=1),
+                'message': 'My office hours for this week will be Tuesday 2-4pm instead of the usual Monday time...',
+                'html_url': '#'
+            }
+        ]
+        logger.info("Using mock Canvas announcement data")
+        return mock_announcements
+
+
 class MapboxService:
     """Service for Mapbox API interactions for traffic maps and travel times"""
     
@@ -548,6 +753,14 @@ class DashboardGenerator:
                 logger.warning(f"Failed to initialize Mapbox service: {e}")
         else:
             logger.warning("MAPBOX_API_KEY not found - traffic features will be limited")
+        
+        # Initialize Canvas service
+        self.canvas_service = None
+        try:
+            self.canvas_service = CanvasService(self.config.get('canvas', {}))
+            logger.info("Canvas service initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Canvas service: {e}")
 
     def _load_config(self, config_path: str) -> dict:
         """Load configuration from JSON file"""
@@ -1681,6 +1894,35 @@ class DashboardGenerator:
             'traffic_map': traffic_map
         }
 
+    def fetch_canvas_assignments(self) -> List[Dict]:
+        """Fetch Canvas assignments"""
+        if not self.canvas_service:
+            logger.warning("Canvas service not available")
+            return []
+        
+        try:
+            days_ahead = self.config.get('canvas', {}).get('days_ahead', 14)
+            assignments = self.canvas_service.fetch_assignments(days_ahead)
+            logger.info(f"Fetched {len(assignments)} Canvas assignments")
+            return assignments
+        except Exception as e:
+            logger.error(f"Failed to fetch Canvas assignments: {e}")
+            return []
+
+    def fetch_canvas_announcements(self) -> List[Dict]:
+        """Fetch Canvas announcements"""
+        if not self.canvas_service:
+            logger.warning("Canvas service not available")
+            return []
+        
+        try:
+            announcements = self.canvas_service.fetch_announcements()
+            logger.info(f"Fetched {len(announcements)} Canvas announcements")
+            return announcements
+        except Exception as e:
+            logger.error(f"Failed to fetch Canvas announcements: {e}")
+            return []
+
     def generate_dashboard(self):
         """Generate the dashboard HTML"""
         try:
@@ -1695,6 +1937,8 @@ class DashboardGenerator:
             events = self.fetch_calendar_events()
             week_events = self.fetch_week_calendar_events()
             agenda_events = self.fetch_agenda_events()
+            canvas_assignments = self.fetch_canvas_assignments()
+            canvas_announcements = self.fetch_canvas_announcements()
 
             # Get current date/time info
             now = datetime.now()
@@ -1834,7 +2078,9 @@ class DashboardGenerator:
                 'sun_position': sun_position,
                 'upcoming_events': upcoming_events,
                 'uv_level': uv_level,
-                'month_days': month_days
+                'month_days': month_days,
+                'canvas_assignments': canvas_assignments,
+                'canvas_announcements': canvas_announcements
             }
 
             # Render template

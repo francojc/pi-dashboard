@@ -1301,3 +1301,131 @@ body {
 .calendar-birthdays {
   border-left-color: #FF9800;
 }
+
+/* Canvas Cards */
+.canvas-card {
+  background: var(--bg-card);
+  border: var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+}
+
+.canvas-card .card-header {
+  background: rgba(100, 255, 218, 0.1);
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid rgba(100, 255, 218, 0.2);
+}
+
+.canvas-card .card-header h3 {
+  color: var(--text-accent);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Canvas Assignments */
+.canvas-assignments {
+  padding: var(--spacing-sm);
+}
+
+.assignment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition);
+}
+
+.assignment-item:last-child {
+  border-bottom: none;
+}
+
+.assignment-item:hover {
+  background: rgba(100, 255, 218, 0.05);
+}
+
+.assignment-info {
+  flex: 1;
+}
+
+.assignment-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.assignment-course {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.assignment-meta {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.assignment-due {
+  margin-bottom: 2px;
+}
+
+.assignment-points {
+  color: var(--text-highlight);
+  font-weight: 500;
+}
+
+/* Canvas Announcements */
+.canvas-announcements {
+  padding: var(--spacing-sm);
+}
+
+.announcement-item {
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition);
+}
+
+.announcement-item:last-child {
+  border-bottom: none;
+}
+
+.announcement-item:hover {
+  background: rgba(100, 255, 218, 0.05);
+}
+
+.announcement-info {
+  margin-bottom: var(--spacing-xs);
+}
+
+.announcement-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.announcement-course {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.announcement-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.announcement-message {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}

@@ -72,5 +72,24 @@
       "lat": 36.133269983139876,
       "lng": -80.27593704795439
     }
+  },
+  "canvas": {
+    "use_mock_data": true,
+    "courses": [
+      {
+        "id": "65908",
+        "name": "SPA 111-B",
+        "color": "#E53935"
+      },
+      {
+        "id": "70536", 
+        "name": "SPA 212-B",
+        "color": "#1E88E5"
+      }
+    ],
+    "days_ahead": 14,
+    "max_assignments": 10,
+    "show_submission_status": true,
+    "show_grades": false
   }
 }

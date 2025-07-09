@@ -505,6 +505,60 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- Canvas Assignments Card -->
+                {% if canvas_assignments and canvas_assignments|length > 0 %}
+                <div class="card canvas-card">
+                    <div class="card-header">
+                        <h3>Upcoming Assignments</h3>
+                    </div>
+                    <div class="canvas-assignments">
+                        {% for assignment in canvas_assignments %}
+                        <div class="assignment-item">
+                            <div class="assignment-info">
+                                <div class="assignment-title">{{ assignment.title }}</div>
+                                <div class="assignment-course" style="color: {{ assignment.course_color }};">
+                                    {{ assignment.course_name }}
+                                </div>
+                            </div>
+                            <div class="assignment-meta">
+                                <div class="assignment-due">Due: {{ assignment.due_date }}</div>
+                                {% if assignment.points_possible %}
+                                <div class="assignment-points">{{ assignment.points_possible }} pts</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Canvas Announcements Card -->
+                {% if canvas_announcements and canvas_announcements|length > 0 %}
+                <div class="card canvas-card">
+                    <div class="card-header">
+                        <h3>Course Announcements</h3>
+                    </div>
+                    <div class="canvas-announcements">
+                        {% for announcement in canvas_announcements %}
+                        <div class="announcement-item">
+                            <div class="announcement-info">
+                                <div class="announcement-title">{{ announcement.title }}</div>
+                                <div class="announcement-course" style="color: {{ announcement.course_color }};">
+                                    {{ announcement.course_name }}
+                                </div>
+                            </div>
+                            <div class="announcement-meta">
+                                <div class="announcement-posted">Posted: {{ announcement.posted_date }}</div>
+                            </div>
+                            {% if announcement.message %}
+                            <div class="announcement-message">{{ announcement.message }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
 
