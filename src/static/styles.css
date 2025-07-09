@@ -814,9 +814,9 @@ body {
 
 /* Traffic Map Section */
 .traffic-section {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(100, 255, 218, 0.1);
+  /* margin-top: 15px; */
+  /* padding-top: 15px; */
+  /* border-top: 1px solid rgba(100, 255, 218, 0.1); */
 }
 
 .traffic-label {
@@ -826,9 +826,16 @@ body {
   text-align: center;
 }
 
+.traffic-horizontal-layout {
+  display: flex;
+  gap: 12px;
+  height: 300px; /* Fixed height to reduce vertical space */
+}
+
 .traffic-map-container {
-  width: 100%;
-  aspect-ratio: 1;
+  flex: 0 0 60%; /* Map takes half the width */
+  height: 100%;
+  aspect-ratio: 1; /* Keep map square */
   border-radius: 8px;
   overflow: hidden;
   background: rgba(100, 255, 218, 0.05);
@@ -842,29 +849,41 @@ body {
   border-radius: 8px;
 }
 
+.traffic-map-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7em;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
 /* Travel Times Section */
 .travel-times {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(100, 255, 218, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .travel-times-label {
-  font-size: 0.9em;
+  font-size: 0.8em;
   color: var(--text-secondary);
-  margin-bottom: 10px;
-  text-align: center;
+  margin-bottom: 8px;
+  text-align: left;
 }
 
 .travel-time-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  margin-bottom: 8px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
   background: rgba(100, 255, 218, 0.05);
   border-radius: 6px;
   border-left: 3px solid var(--text-accent);
+  min-height: 50px;
 }
 
 .travel-time-item:last-child {
@@ -879,23 +898,23 @@ body {
 }
 
 .destination-name {
-  font-size: 0.85em;
+  font-size: 0.8em;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .traffic-status {
-  font-size: 0.7em;
+  font-size: 0.65em;
   color: var(--text-secondary);
   opacity: 0.8;
 }
 
 .travel-duration {
-  font-size: 0.9em;
+  font-size: 0.85em;
   font-weight: 600;
   color: var(--text-accent);
   text-align: right;
-  min-width: 60px;
+  min-width: 50px;
 }
 
 /* Calendar Card */
@@ -1428,4 +1447,311 @@ body {
   margin-top: var(--spacing-xs);
   padding-top: var(--spacing-xs);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Canvas Grading Queue */
+.canvas-grading-queue {
+  padding: var(--spacing-sm);
+}
+
+.grading-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition);
+  border-left: 3px solid var(--text-accent);
+}
+
+.grading-item:last-child {
+  border-bottom: none;
+}
+
+.grading-item:hover {
+  background: rgba(100, 255, 218, 0.05);
+}
+
+.grading-item.priority-high {
+  border-left-color: #ff6b6b;
+}
+
+.grading-item.priority-medium {
+  border-left-color: #f39c12;
+}
+
+.grading-item.priority-low {
+  border-left-color: #64ffda;
+}
+
+.grading-info {
+  flex: 1;
+}
+
+.grading-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.grading-course {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.grading-meta {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.grading-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.submission-count {
+  color: var(--text-highlight);
+  font-weight: 500;
+}
+
+.grading-priority {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.grading-due {
+  font-size: 0.8rem;
+}
+
+/* Canvas Student Engagement */
+.canvas-student-engagement {
+  padding: var(--spacing-sm);
+}
+
+.engagement-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition);
+  border-left: 3px solid var(--text-accent);
+}
+
+.engagement-item:last-child {
+  border-bottom: none;
+}
+
+.engagement-item:hover {
+  background: rgba(100, 255, 218, 0.05);
+}
+
+.engagement-item.risk-high {
+  border-left-color: #ff6b6b;
+}
+
+.engagement-item.risk-medium {
+  border-left-color: #f39c12;
+}
+
+.engagement-item.risk-low {
+  border-left-color: #64ffda;
+}
+
+.engagement-info {
+  flex: 1;
+}
+
+.student-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.engagement-course {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.engagement-meta {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.engagement-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.missing-count {
+  color: #ff6b6b;
+  font-weight: 500;
+}
+
+.late-count {
+  color: #f39c12;
+  font-weight: 500;
+}
+
+.engagement-risk {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Canvas Discussion Hotspots */
+.canvas-discussion-hotspots {
+  padding: var(--spacing-sm);
+}
+
+.discussion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition);
+  border-left: 3px solid var(--text-accent);
+}
+
+.discussion-item:last-child {
+  border-bottom: none;
+}
+
+.discussion-item:hover {
+  background: rgba(100, 255, 218, 0.05);
+}
+
+.discussion-info {
+  flex: 1;
+}
+
+.discussion-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.discussion-course {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.discussion-meta {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.discussion-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.reply-count {
+  color: var(--text-highlight);
+  font-weight: 500;
+}
+
+.unread-count {
+  color: #ff6b6b;
+  font-weight: 500;
+}
+
+.discussion-activity {
+  font-size: 0.8rem;
+}
+
+/* Canvas Assignment Performance */
+.canvas-assignment-performance {
+  padding: var(--spacing-sm);
+}
+
+.performance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition);
+  border-left: 3px solid var(--text-accent);
+}
+
+.performance-item:last-child {
+  border-bottom: none;
+}
+
+.performance-item:hover {
+  background: rgba(100, 255, 218, 0.05);
+}
+
+.performance-info {
+  flex: 1;
+}
+
+.performance-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.performance-course {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.performance-meta {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.performance-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.grade-average {
+  color: var(--text-highlight);
+  font-weight: 500;
+}
+
+.submission-stats {
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
+.performance-distribution {
+  display: flex;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.grade-high {
+  color: #64ffda;
+}
+
+.grade-medium {
+  color: #f39c12;
+}
+
+.grade-low {
+  color: #ff6b6b;
 }

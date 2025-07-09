@@ -562,6 +562,445 @@ class CanvasService:
         logger.info("Using mock Canvas announcement data")
         return mock_announcements
 
+    def fetch_grading_queue(self) -> List[Dict]:
+        """Fetch items needing grading from configured courses"""
+        if self.config.get('use_mock_data', False) or not self.api_key:
+            return self._get_mock_grading_queue()
+        
+        all_grading_items = []
+        courses = self.config.get('courses', [])
+        max_items = self.config.get('max_grading_items', 10)
+        
+        for course in courses:
+            course_id = course.get('id')
+            course_name = course.get('name', f'Course {course_id}')
+            course_color = course.get('color', '#666666')
+            
+            if not course_id:
+                continue
+                
+            # Get assignments needing grading
+            assignments = self._make_request(f'courses/{course_id}/assignments', {
+                'bucket': 'ungraded',
+                'per_page': 50
+            })
+            
+            if not assignments:
+                continue
+                
+            for assignment in assignments:
+                needs_grading = assignment.get('needs_grading_count', 0)
+                if needs_grading > 0:
+                    due_at = assignment.get('due_at')
+                    due_date_str = 'No due date'
+                    priority = 'low'
+                    
+                    if due_at:
+                        try:
+                            due_date = datetime.fromisoformat(due_at.replace('Z', '+00:00'))
+                            due_date_str = due_date.strftime('%m/%d %H:%M')
+                            days_until_due = (due_date.date() - datetime.now().date()).days
+                            
+                            # Set priority based on due date
+                            if days_until_due <= 1:
+                                priority = 'high'
+                            elif days_until_due <= 3:
+                                priority = 'medium'
+                            else:
+                                priority = 'low'
+                        except ValueError:
+                            pass
+                    
+                    # Build SpeedGrader URL
+                    speedgrader_url = f"{self.base_url.replace('/api/v1', '')}/courses/{course_id}/gradebook/speed_grader?assignment_id={assignment.get('id')}"
+                    
+                    all_grading_items.append({
+                        'title': assignment.get('name', 'Untitled Assignment'),
+                        'course_name': course_name,
+                        'course_color': course_color,
+                        'submissions_count': needs_grading,
+                        'due_date': due_date_str,
+                        'priority': priority,
+                        'speedgrader_url': speedgrader_url,
+                        'assignment_type': 'assignment'
+                    })
+        
+        # Sort by priority (high first), then by due date
+        priority_order = {'high': 0, 'medium': 1, 'low': 2}
+        all_grading_items.sort(key=lambda x: (priority_order.get(x['priority'], 3), x['due_date']))
+        
+        return all_grading_items[:max_items]
+
+    def fetch_student_engagement(self) -> List[Dict]:
+        """Fetch students who may need attention based on engagement metrics"""
+        if self.config.get('use_mock_data', False) or not self.api_key:
+            return self._get_mock_student_engagement()
+        
+        at_risk_students = []
+        courses = self.config.get('courses', [])
+        max_students = self.config.get('max_at_risk_students', 5)
+        
+        for course in courses:
+            course_id = course.get('id')
+            course_name = course.get('name', f'Course {course_id}')
+            course_color = course.get('color', '#666666')
+            
+            if not course_id:
+                continue
+            
+            # Get students in the course
+            students = self._make_request(f'courses/{course_id}/users', {
+                'enrollment_type[]': 'student',
+                'per_page': 100
+            })
+            
+            if not students:
+                continue
+            
+            for student in students:
+                student_id = student.get('id')
+                student_name = student.get('name', 'Unknown Student')
+                
+                # Get student submissions to check for missing assignments
+                submissions = self._make_request(f'courses/{course_id}/students/submissions', {
+                    'student_ids[]': student_id,
+                    'per_page': 50
+                })
+                
+                if not submissions:
+                    continue
+                
+                missing_count = 0
+                late_count = 0
+                
+                for submission in submissions:
+                    if submission.get('missing'):
+                        missing_count += 1
+                    elif submission.get('late'):
+                        late_count += 1
+                
+                # Determine if student is at risk
+                risk_indicators = []
+                if missing_count >= 2:
+                    risk_indicators.append(f"{missing_count} missing assignments")
+                if late_count >= 3:
+                    risk_indicators.append(f"{late_count} late submissions")
+                
+                if risk_indicators:
+                    at_risk_students.append({
+                        'name': student_name,
+                        'course_name': course_name,
+                        'course_color': course_color,
+                        'risk_indicators': risk_indicators,
+                        'missing_assignments': missing_count,
+                        'late_assignments': late_count,
+                        'student_url': f"{self.base_url.replace('/api/v1', '')}/courses/{course_id}/users/{student_id}"
+                    })
+        
+        # Sort by risk level (missing assignments first, then late assignments)
+        at_risk_students.sort(key=lambda x: (x['missing_assignments'], x['late_assignments']), reverse=True)
+        
+        return at_risk_students[:max_students]
+
+    def fetch_discussion_hotspots(self) -> List[Dict]:
+        """Fetch discussion topics with high activity needing instructor attention"""
+        if self.config.get('use_mock_data', False) or not self.api_key:
+            return self._get_mock_discussion_hotspots()
+        
+        active_discussions = []
+        courses = self.config.get('courses', [])
+        max_discussions = self.config.get('max_discussions', 5)
+        
+        for course in courses:
+            course_id = course.get('id')
+            course_name = course.get('name', f'Course {course_id}')
+            course_color = course.get('color', '#666666')
+            
+            if not course_id:
+                continue
+            
+            # Get discussion topics, excluding announcements
+            discussions = self._make_request(f'courses/{course_id}/discussion_topics', {
+                'only_announcements': 'false',
+                'per_page': 20
+            })
+            
+            if not discussions:
+                continue
+            
+            for discussion in discussions:
+                unread_count = discussion.get('unread_count', 0)
+                discussion_count = discussion.get('discussion_count', 0)
+                
+                # Only show discussions with activity
+                if unread_count > 0 or discussion_count > 5:
+                    active_discussions.append({
+                        'title': discussion.get('title', 'Untitled Discussion'),
+                        'course_name': course_name,
+                        'course_color': course_color,
+                        'unread_count': unread_count,
+                        'total_posts': discussion_count,
+                        'activity_level': 'High' if unread_count > 3 else 'Medium' if unread_count > 1 else 'Low',
+                        'discussion_url': discussion.get('html_url', ''),
+                        'last_posted': discussion.get('last_reply_at', '')
+                    })
+        
+        # Sort by activity level (unread count descending)
+        active_discussions.sort(key=lambda x: x['unread_count'], reverse=True)
+        
+        return active_discussions[:max_discussions]
+
+    def fetch_recent_assignment_performance(self) -> List[Dict]:
+        """Fetch performance data for the most recent assignment"""
+        if self.config.get('use_mock_data', False) or not self.api_key:
+            return self._get_mock_assignment_performance()
+        
+        courses = self.config.get('courses', [])
+        most_recent_assignment = None
+        most_recent_date = None
+        
+        # Find the most recently due assignment across all courses
+        for course in courses:
+            course_id = course.get('id')
+            course_name = course.get('name', f'Course {course_id}')
+            course_color = course.get('color', '#666666')
+            
+            if not course_id:
+                continue
+            
+            assignments = self._make_request(f'courses/{course_id}/assignments', {
+                'bucket': 'past',
+                'per_page': 10
+            })
+            
+            if not assignments:
+                continue
+            
+            for assignment in assignments:
+                due_at = assignment.get('due_at')
+                if due_at:
+                    try:
+                        due_date = datetime.fromisoformat(due_at.replace('Z', '+00:00'))
+                        if not most_recent_date or due_date > most_recent_date:
+                            most_recent_date = due_date
+                            most_recent_assignment = {
+                                'assignment': assignment,
+                                'course_id': course_id,
+                                'course_name': course_name,
+                                'course_color': course_color
+                            }
+                    except ValueError:
+                        continue
+        
+        if not most_recent_assignment:
+            return []
+        
+        # Get submissions for the most recent assignment
+        assignment_id = most_recent_assignment['assignment']['id']
+        course_id = most_recent_assignment['course_id']
+        
+        submissions = self._make_request(f'courses/{course_id}/assignments/{assignment_id}/submissions', {
+            'per_page': 100
+        })
+        
+        if not submissions:
+            return []
+        
+        # Calculate performance statistics
+        scores = []
+        late_count = 0
+        missing_count = 0
+        
+        for submission in submissions:
+            if submission.get('missing'):
+                missing_count += 1
+            elif submission.get('late'):
+                late_count += 1
+            
+            score = submission.get('score')
+            if score is not None:
+                scores.append(score)
+        
+        if not scores:
+            return []
+        
+        # Calculate grade distribution
+        avg_score = sum(scores) / len(scores)
+        max_score = max(scores)
+        min_score = min(scores)
+        
+        # Simple grade distribution (A, B, C, D, F)
+        points_possible = most_recent_assignment['assignment'].get('points_possible', 100)
+        grade_distribution = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0}
+        
+        for score in scores:
+            percentage = (score / points_possible) * 100 if points_possible > 0 else 0
+            if percentage >= 90:
+                grade_distribution['A'] += 1
+            elif percentage >= 80:
+                grade_distribution['B'] += 1
+            elif percentage >= 70:
+                grade_distribution['C'] += 1
+            elif percentage >= 60:
+                grade_distribution['D'] += 1
+            else:
+                grade_distribution['F'] += 1
+        
+        return [{
+            'assignment_name': most_recent_assignment['assignment']['name'],
+            'course_name': most_recent_assignment['course_name'],
+            'course_color': most_recent_assignment['course_color'],
+            'average_grade': round(avg_score, 1),
+            'submitted_count': len(scores),
+            'total_students': len(submissions),
+            'grade_distribution': grade_distribution
+        }]
+
+    def _get_mock_grading_queue(self) -> List[Dict]:
+        """Generate mock grading queue data for testing"""
+        mock_items = [
+            {
+                'title': 'Essay Assignment 3',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'submissions_count': 18,
+                'due_date': '01/15 23:59',
+                'priority': 'high',
+                'speedgrader_url': '#',
+                'assignment_type': 'assignment'
+            },
+            {
+                'title': 'Quiz: Preterite vs Imperfect',
+                'course_name': 'SPA 212-B',
+                'course_color': '#1E88E5',
+                'submissions_count': 12,
+                'due_date': '01/14 11:59',
+                'priority': 'high',
+                'speedgrader_url': '#',
+                'assignment_type': 'quiz'
+            },
+            {
+                'title': 'Discussion: Cultural Perspectives',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'submissions_count': 8,
+                'due_date': '01/18 23:59',
+                'priority': 'medium',
+                'speedgrader_url': '#',
+                'assignment_type': 'discussion'
+            }
+        ]
+        logger.info("Using mock Canvas grading queue data")
+        return mock_items
+
+    def _get_mock_student_engagement(self) -> List[Dict]:
+        """Generate mock student engagement data for testing"""
+        mock_students = [
+            {
+                'name': 'Maria Garcia',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'risk_indicators': ['3 missing assignments', '2 late submissions'],
+                'missing_assignments': 3,
+                'late_assignments': 2,
+                'student_url': '#'
+            },
+            {
+                'name': 'John Smith',
+                'course_name': 'SPA 212-B',
+                'course_color': '#1E88E5',
+                'risk_indicators': ['2 missing assignments'],
+                'missing_assignments': 2,
+                'late_assignments': 0,
+                'student_url': '#'
+            },
+            {
+                'name': 'Ana Rodriguez',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'risk_indicators': ['5 late submissions'],
+                'missing_assignments': 0,
+                'late_assignments': 5,
+                'student_url': '#'
+            }
+        ]
+        logger.info("Using mock Canvas student engagement data")
+        return mock_students
+
+    def _get_mock_discussion_hotspots(self) -> List[Dict]:
+        """Generate mock discussion hotspots data for testing"""
+        mock_discussions = [
+            {
+                'title': 'Questions about Final Project',
+                'course_name': 'SPA 212-B',
+                'course_color': '#1E88E5',
+                'unread_count': 7,
+                'total_posts': 24,
+                'activity_level': 'High',
+                'discussion_url': '#',
+                'last_posted': '2025-01-13T14:30:00Z'
+            },
+            {
+                'title': 'Grammar Help Thread',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'unread_count': 3,
+                'total_posts': 15,
+                'activity_level': 'Medium',
+                'discussion_url': '#',
+                'last_posted': '2025-01-13T10:15:00Z'
+            },
+            {
+                'title': 'Cultural Exchange Discussion',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'unread_count': 2,
+                'total_posts': 12,
+                'activity_level': 'Medium',
+                'discussion_url': '#',
+                'last_posted': '2025-01-12T16:45:00Z'
+            }
+        ]
+        logger.info("Using mock Canvas discussion hotspots data")
+        return mock_discussions
+
+    def _get_mock_assignment_performance(self) -> List[Dict]:
+        """Generate mock assignment performance data for testing"""
+        mock_performance = [
+            {
+                'assignment_name': 'Midterm Exam',
+                'course_name': 'SPA 212-B',
+                'course_color': '#1E88E5',
+                'average_grade': 84.3,
+                'submitted_count': 28,
+                'total_students': 29,
+                'grade_distribution': {
+                    'A': 8,
+                    'B': 12,
+                    'C': 6,
+                    'D': 2,
+                    'F': 0
+                }
+            },
+            {
+                'assignment_name': 'Essay Assignment',
+                'course_name': 'SPA 111-B',
+                'course_color': '#E53935',
+                'average_grade': 78.5,
+                'submitted_count': 24,
+                'total_students': 26,
+                'grade_distribution': {
+                    'A': 4,
+                    'B': 10,
+                    'C': 8,
+                    'D': 2,
+                    'F': 0
+                }
+            }
+        ]
+        logger.info("Using mock Canvas assignment performance data")
+        return mock_performance
+
 
 class MapboxService:
     """Service for Mapbox API interactions for traffic maps and travel times"""
@@ -1923,6 +2362,62 @@ class DashboardGenerator:
             logger.error(f"Failed to fetch Canvas announcements: {e}")
             return []
 
+    def fetch_canvas_grading_queue(self) -> List[Dict]:
+        """Fetch Canvas grading queue"""
+        if not self.canvas_service:
+            logger.warning("Canvas service not available")
+            return []
+        
+        try:
+            grading_queue = self.canvas_service.fetch_grading_queue()
+            logger.info(f"Fetched {len(grading_queue)} Canvas grading queue items")
+            return grading_queue
+        except Exception as e:
+            logger.error(f"Failed to fetch Canvas grading queue: {e}")
+            return []
+
+    def fetch_canvas_student_engagement(self) -> List[Dict]:
+        """Fetch Canvas student engagement data"""
+        if not self.canvas_service:
+            logger.warning("Canvas service not available")
+            return []
+        
+        try:
+            student_engagement = self.canvas_service.fetch_student_engagement()
+            logger.info(f"Fetched {len(student_engagement)} Canvas student engagement items")
+            return student_engagement
+        except Exception as e:
+            logger.error(f"Failed to fetch Canvas student engagement: {e}")
+            return []
+
+    def fetch_canvas_discussion_hotspots(self) -> List[Dict]:
+        """Fetch Canvas discussion hotspots"""
+        if not self.canvas_service:
+            logger.warning("Canvas service not available")
+            return []
+        
+        try:
+            discussion_hotspots = self.canvas_service.fetch_discussion_hotspots()
+            logger.info(f"Fetched {len(discussion_hotspots)} Canvas discussion hotspots")
+            return discussion_hotspots
+        except Exception as e:
+            logger.error(f"Failed to fetch Canvas discussion hotspots: {e}")
+            return []
+
+    def fetch_canvas_assignment_performance(self) -> List[Dict]:
+        """Fetch Canvas assignment performance data"""
+        if not self.canvas_service:
+            logger.warning("Canvas service not available")
+            return []
+        
+        try:
+            assignment_performance = self.canvas_service.fetch_recent_assignment_performance()
+            logger.info(f"Fetched {len(assignment_performance)} Canvas assignment performance items")
+            return assignment_performance
+        except Exception as e:
+            logger.error(f"Failed to fetch Canvas assignment performance: {e}")
+            return []
+
     def generate_dashboard(self):
         """Generate the dashboard HTML"""
         try:
@@ -1939,6 +2434,10 @@ class DashboardGenerator:
             agenda_events = self.fetch_agenda_events()
             canvas_assignments = self.fetch_canvas_assignments()
             canvas_announcements = self.fetch_canvas_announcements()
+            canvas_grading_queue = self.fetch_canvas_grading_queue()
+            canvas_student_engagement = self.fetch_canvas_student_engagement()
+            canvas_discussion_hotspots = self.fetch_canvas_discussion_hotspots()
+            canvas_assignment_performance = self.fetch_canvas_assignment_performance()
 
             # Get current date/time info
             now = datetime.now()
@@ -2080,7 +2579,11 @@ class DashboardGenerator:
                 'uv_level': uv_level,
                 'month_days': month_days,
                 'canvas_assignments': canvas_assignments,
-                'canvas_announcements': canvas_announcements
+                'canvas_announcements': canvas_announcements,
+                'canvas_grading_queue': canvas_grading_queue,
+                'canvas_student_engagement': canvas_student_engagement,
+                'canvas_discussion_hotspots': canvas_discussion_hotspots,
+                'canvas_assignment_performance': canvas_assignment_performance
             }
 
             # Render template

@@ -335,6 +335,89 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- Canvas Assignments Card -->
+                {% if canvas_assignments and canvas_assignments|length > 0 %}
+                <div class="card canvas-card">
+                    <div class="card-header">
+                        <h3>Upcoming Assignments</h3>
+                    </div>
+                    <div class="canvas-assignments">
+                        {% for assignment in canvas_assignments %}
+                        <div class="assignment-item">
+                            <div class="assignment-info">
+                                <div class="assignment-title">{{ assignment.title }}</div>
+                                <div class="assignment-course" style="color: {{ assignment.course_color }};">
+                                    {{ assignment.course_name }}
+                                </div>
+                            </div>
+                            <div class="assignment-meta">
+                                <div class="assignment-due">Due: {{ assignment.due_date }}</div>
+                                {% if assignment.points_possible %}
+                                <div class="assignment-points">{{ assignment.points_possible }} pts</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Canvas Grading Queue Card -->
+                {% if canvas_grading_queue and canvas_grading_queue|length > 0 %}
+                <div class="card canvas-card">
+                    <div class="card-header">
+                        <h3>Priority Grading Queue</h3>
+                    </div>
+                    <div class="canvas-grading-queue">
+                        {% for item in canvas_grading_queue %}
+                        <div class="grading-item priority-{{ item.priority }}">
+                            <div class="grading-info">
+                                <div class="grading-title">{{ item.assignment_name }}</div>
+                                <div class="grading-course" style="color: {{ item.course_color }};">
+                                    {{ item.course_name }}
+                                </div>
+                            </div>
+                            <div class="grading-meta">
+                                <div class="grading-stats">
+                                    <span class="submission-count">{{ item.submission_count }} submissions</span>
+                                    <span class="grading-priority">{{ item.priority|title }} Priority</span>
+                                </div>
+                                <div class="grading-due">Due: {{ item.due_date }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Canvas Student Engagement Card -->
+                {% if canvas_student_engagement and canvas_student_engagement|length > 0 %}
+                <div class="card canvas-card">
+                    <div class="card-header">
+                        <h3>Student Engagement Alert</h3>
+                    </div>
+                    <div class="canvas-student-engagement">
+                        {% for student in canvas_student_engagement %}
+                        <div class="engagement-item risk-{{ student.risk_level }}">
+                            <div class="engagement-info">
+                                <div class="student-name">{{ student.student_name }}</div>
+                                <div class="engagement-course" style="color: {{ student.course_color }};">
+                                    {{ student.course_name }}
+                                </div>
+                            </div>
+                            <div class="engagement-meta">
+                                <div class="engagement-stats">
+                                    <span class="missing-count">{{ student.missing_count }} missing</span>
+                                    <span class="late-count">{{ student.late_count }} late</span>
+                                </div>
+                                <div class="engagement-risk">{{ student.risk_level|title }} Risk</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Right Column - Weather Related Cards -->
@@ -472,60 +555,93 @@
 
                 <!-- Travel Card -->
                 <div class="card local-info-card">
-
-                    <!-- Traffic Map Section -->
                     <div class="traffic-section">
                         <div class="traffic-label">Traffic Conditions</div>
-                        <div class="traffic-map-container">
-                            {% if mapbox_map_config and mapbox_map_config.access_token %}
-                            <!-- Mapbox GL JS interactive map with traffic -->
-                            <div id="traffic-map" class="traffic-map"></div>
-                            {% else %}
-                            <!-- Fallback when Mapbox not available -->
-                            <div class="traffic-map-fallback">
-                                <p>Traffic map temporarily unavailable</p>
+                        <div class="traffic-horizontal-layout">
+                            <!-- Traffic Map (Vertical Rectangle) -->
+                            <div class="traffic-map-container">
+                                {% if mapbox_map_config and mapbox_map_config.access_token %}
+                                <!-- Mapbox GL JS interactive map with traffic -->
+                                <div id="traffic-map" class="traffic-map"></div>
+                                {% else %}
+                                <!-- Fallback when Mapbox not available -->
+                                <div class="traffic-map-fallback">
+                                    <p>Traffic map temporarily unavailable</p>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Travel Times Section (Side Panel) -->
+                            {% if travel_times and travel_times|length > 0 %}
+                            <div class="travel-times">
+                                {% for travel_time in travel_times %}
+                                <div class="travel-time-item">
+                                    <div class="destination-info">
+                                        <span class="destination-name">{{ travel_time.destination }}</span>
+                                        <span class="traffic-status">{{ travel_time.traffic_status }}</span>
+                                    </div>
+                                    <div class="travel-duration">{{ travel_time.duration_text }}</div>
+                                </div>
+                                {% endfor %}
                             </div>
                             {% endif %}
                         </div>
-
-                        <!-- Travel Times Section -->
-                        {% if travel_times and travel_times|length > 0 %}
-                        <div class="travel-times">
-                            <div class="travel-times-label">Travel Times</div>
-                            {% for travel_time in travel_times %}
-                            <div class="travel-time-item">
-                                <div class="destination-info">
-                                    <span class="destination-name">{{ travel_time.destination }}</span>
-                                    <span class="traffic-status">{{ travel_time.traffic_status }}</span>
-                                </div>
-                                <div class="travel-duration">{{ travel_time.duration_text }}</div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
 
-                <!-- Canvas Assignments Card -->
-                {% if canvas_assignments and canvas_assignments|length > 0 %}
+                <!-- Canvas Discussion Hotspots Card -->
+                {% if canvas_discussion_hotspots and canvas_discussion_hotspots|length > 0 %}
                 <div class="card canvas-card">
                     <div class="card-header">
-                        <h3>Upcoming Assignments</h3>
+                        <h3>Discussion Hotspots</h3>
                     </div>
-                    <div class="canvas-assignments">
-                        {% for assignment in canvas_assignments %}
-                        <div class="assignment-item">
-                            <div class="assignment-info">
-                                <div class="assignment-title">{{ assignment.title }}</div>
-                                <div class="assignment-course" style="color: {{ assignment.course_color }};">
+                    <div class="canvas-discussion-hotspots">
+                        {% for discussion in canvas_discussion_hotspots %}
+                        <div class="discussion-item">
+                            <div class="discussion-info">
+                                <div class="discussion-title">{{ discussion.title }}</div>
+                                <div class="discussion-course" style="color: {{ discussion.course_color }};">
+                                    {{ discussion.course_name }}
+                                </div>
+                            </div>
+                            <div class="discussion-meta">
+                                <div class="discussion-stats">
+                                    <span class="reply-count">{{ discussion.reply_count }} replies</span>
+                                    <span class="unread-count">{{ discussion.unread_count }} unread</span>
+                                </div>
+                                <div class="discussion-activity">Last: {{ discussion.last_activity }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Canvas Assignment Performance Card -->
+                {% if canvas_assignment_performance and canvas_assignment_performance|length > 0 %}
+                <div class="card canvas-card">
+                    <div class="card-header">
+                        <h3>Assignment Performance</h3>
+                    </div>
+                    <div class="canvas-assignment-performance">
+                        {% for assignment in canvas_assignment_performance %}
+                        <div class="performance-item">
+                            <div class="performance-info">
+                                <div class="performance-title">{{ assignment.assignment_name }}</div>
+                                <div class="performance-course" style="color: {{ assignment.course_color }};">
                                     {{ assignment.course_name }}
                                 </div>
                             </div>
-                            <div class="assignment-meta">
-                                <div class="assignment-due">Due: {{ assignment.due_date }}</div>
-                                {% if assignment.points_possible %}
-                                <div class="assignment-points">{{ assignment.points_possible }} pts</div>
-                                {% endif %}
+                            <div class="performance-meta">
+                                <div class="performance-stats">
+                                    <span class="grade-average">Avg: {{ assignment.average_grade }}%</span>
+                                    <span class="submission-stats">{{ assignment.submitted_count }}/{{ assignment.total_students }}</span>
+                                </div>
+                                <div class="performance-distribution">
+                                    <span class="grade-high">A: {{ assignment.grade_distribution.A }}</span>
+                                    <span class="grade-medium">B: {{ assignment.grade_distribution.B }}</span>
+                                    <span class="grade-low">C: {{ assignment.grade_distribution.C }}</span>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -533,32 +649,6 @@
                 </div>
                 {% endif %}
 
-                <!-- Canvas Announcements Card -->
-                {% if canvas_announcements and canvas_announcements|length > 0 %}
-                <div class="card canvas-card">
-                    <div class="card-header">
-                        <h3>Course Announcements</h3>
-                    </div>
-                    <div class="canvas-announcements">
-                        {% for announcement in canvas_announcements %}
-                        <div class="announcement-item">
-                            <div class="announcement-info">
-                                <div class="announcement-title">{{ announcement.title }}</div>
-                                <div class="announcement-course" style="color: {{ announcement.course_color }};">
-                                    {{ announcement.course_name }}
-                                </div>
-                            </div>
-                            <div class="announcement-meta">
-                                <div class="announcement-posted">Posted: {{ announcement.posted_date }}</div>
-                            </div>
-                            {% if announcement.message %}
-                            <div class="announcement-message">{{ announcement.message }}</div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
 
