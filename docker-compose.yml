@@ -12,6 +12,8 @@ services:
       - GOOGLE_CALENDAR_CLIENT_SECRET=${GOOGLE_CALENDAR_CLIENT_SECRET:-}
       - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
       - MAPBOX_API_KEY=${MAPBOX_API_KEY:-}
+      - CANVAS_BASE_URL=${CANVAS_BASE_URL:-}
+      - CANVAS_API_KEY=${CANVAS_API_KEY:-}
       - WEATHER_LOCATION=${WEATHER_LOCATION:-Winston-Salem,NC,US}
       - WEATHER_UNITS=${WEATHER_UNITS:-imperial}
       - PORT=${PORT:-8080}
@@ -19,7 +21,7 @@ services:
     volumes:
       - ./src:/app/src:ro
       - ./requirements.txt:/app/requirements.txt:ro
-      - ./token.json:/app/token.json:ro
+      - ./token.json:/app/token.json
       - dashboard_output:/app/output
     restart: unless-stopped
     networks:
