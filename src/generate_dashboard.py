@@ -10,6 +10,7 @@ import json
 import logging
 import shutil
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -1295,6 +1296,16 @@ class DashboardGenerator:
             logger.debug(f"Sun position calculation failed: {e}")
             return 35  # Safe middle position
 
+    def _get_configured_timezone(self):
+        """Get the configured timezone from config, with fallback to UTC"""
+        try:
+            config = self.config.get('weather', {})
+            timezone_name = config.get('timezone', 'UTC')
+            return ZoneInfo(timezone_name)
+        except Exception:
+            logger.warning(f"Invalid timezone in config, falling back to UTC")
+            return ZoneInfo('UTC')
+
     def fetch_weather(self) -> Optional[Dict]:
         """Fetch weather data from OpenWeatherMap One Call API 3.0 with alerts"""
         # If in test mode, return mock data
@@ -1483,11 +1494,23 @@ class DashboardGenerator:
             data = response.json()
 
             hourly_forecast = []
+            local_tz = self._get_configured_timezone()
+            current_time = datetime.now(local_tz)
             
-            # Take first 8 items (24 hours worth of 3-hour intervals)
-            for item in data['list'][:8]:
-                # Convert UTC timestamp to local time
-                dt_object = datetime.fromtimestamp(item['dt'])
+            # Filter to only show future forecast times
+            future_items = []
+            for item in data['list']:
+                # Convert UTC timestamp to configured timezone
+                dt_object = datetime.fromtimestamp(item['dt'], tz=local_tz)
+                if dt_object > current_time:
+                    future_items.append(item)
+                    if len(future_items) >= 8:  # Take 8 future items (24 hours worth)
+                        break
+            
+            # Process the future forecast items
+            for item in future_items:
+                # Convert UTC timestamp to configured timezone
+                dt_object = datetime.fromtimestamp(item['dt'], tz=local_tz)
                 
                 # Get weather info
                 weather_info = item['weather'][0] if item.get('weather') else {}
@@ -1753,16 +1776,21 @@ class DashboardGenerator:
             # Process forecast data - group by day and get daily highs/lows
             forecast_days = {}
             day_names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+            local_tz = self._get_configured_timezone()
+            current_time = datetime.now(local_tz)
 
             for item in data['list'][:40]:  # 5 days * 8 (3-hour intervals)
-                dt = datetime.fromtimestamp(item['dt'])
+                dt = datetime.fromtimestamp(item['dt'], tz=local_tz)
                 day_key = dt.strftime('%Y-%m-%d')
+                today = current_time.date()
+                item_date = dt.date()
+
+                # For today, only include future forecast data
+                if item_date == today and dt <= current_time:
+                    continue
 
                 if day_key not in forecast_days:
                     # Determine day name
-                    today = datetime.now().date()
-                    item_date = dt.date()
-
                     if item_date == today:
                         day_name = 'TODAY'
                     else:

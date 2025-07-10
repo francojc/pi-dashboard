@@ -1232,7 +1232,7 @@ body {
 }
 
 /* Responsive adjustments for smaller displays */
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .current-time {
     font-size: 4em;
   }
