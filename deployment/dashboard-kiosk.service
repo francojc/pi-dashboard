@@ -1,0 +1,41 @@
+[Unit]
+Description=Dashboard Kiosk Mode
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+
+# Environment
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/pi/.Xauthority"
+Environment="HOME=/home/pi"
+
+# Start web server and X server with Chromium
+ExecStartPre=/bin/bash -c 'cd /home/pi/pi-dashboard && /usr/bin/python3 -m http.server 8000 --directory output &'
+ExecStart=/usr/bin/xinit /usr/bin/chromium-browser \
+  --kiosk \
+  --no-sandbox \
+  --disable-infobars \
+  --disable-session-crashed-bubble \
+  --disable-extensions \
+  --disable-features=TranslateUI \
+  --disk-cache-size=1 \
+  --media-cache-size=1 \
+  --incognito \
+  --check-for-update-interval=31536000 \
+  http://localhost:8000 \
+  -- -nocursor -s 0 -dpms
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
